@@ -1,4 +1,4 @@
-export type ThreadStatus = 'TODO_REPLY' | 'REPLIED_NO_APPOINTMENT' | 'APPOINTMENT_SET' | 'CANCELLED' | 'ARCHIVE';
+export type ThreadStatus = 'TO_ANSWER' | 'ANSWERED' | 'CONSULTATION_PLANNED' | 'GO' | 'NO_GO' | 'ARCHIVE';
 export type MessageDirection = 'INBOUND' | 'OUTBOUND';
 
 export interface Thread {
@@ -17,6 +17,25 @@ export interface Thread {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  messages?: Message[];
+}
+
+export interface PrivateEventRequest {
+  id: string;
+  gmail_thread_id: string;
+  sender_name: string;
+  sender_email: string;
+  occasion_type: string | null;
+  event_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  guest_count: number | null;
+  special_notes: string | null;
+  ai_summary: string | null;
+  status: ThreadStatus;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
   messages?: Message[];
 }
 
