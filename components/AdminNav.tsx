@@ -64,8 +64,8 @@ function AdminNavInner() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b flex items-center gap-3 px-4 md:px-6 h-20"
-      style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)' }}
+      className="sticky top-0 z-40 border-b flex items-center gap-3 h-20"
+      style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)', paddingLeft: '20px', paddingRight: '1.5rem' }}
     >
       {/* Logo */}
       <Link href="/dashboard" aria-label="Café De Heeren – home" className="shrink-0">
