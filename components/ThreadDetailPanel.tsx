@@ -146,7 +146,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
       <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto px-6 py-5">
 
         {/* ── Logo + terug-knop (scrollen mee) ── */}
-        <div className="flex flex-col items-start gap-2 pb-1">
+        <div className="flex flex-col items-start gap-2 pb-1 -mx-6 px-5">
           <Link href="/dashboard" aria-label="Café De Heeren – home">
             <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[160px] h-auto" />
           </Link>
