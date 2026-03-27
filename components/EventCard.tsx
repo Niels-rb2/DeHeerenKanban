@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PrivateEventRequest } from '@/lib/types';
 import { formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
@@ -24,33 +23,18 @@ interface EventCardProps {
 
 export function EventCard({ event }: EventCardProps) {
   const router = useRouter();
-  const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    mouseDownPos.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (!mouseDownPos.current) return;
-
-    // Calculate distance moved
-    const distance = Math.sqrt(
-      Math.pow(e.clientX - mouseDownPos.current.x, 2) +
-        Math.pow(e.clientY - mouseDownPos.current.y, 2)
-    );
-
-    // Only navigate if click (distance < 5px)
-    if (distance < 5) {
-      router.push(`/private-events/${event.id}`);
-    }
-    mouseDownPos.current = null;
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent drag-drop from intercepting the click
+    e.stopPropagation();
+    e.preventDefault();
+    router.push(`/private-events/${event.id}`);
   };
 
   return (
     <div
       className="glass-card-hover rounded-2xl p-4 cursor-pointer"
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
+      onClick={handleClick}
     >
       {/* Contact */}
       <div className="flex items-start gap-2 mb-2 pr-4">
