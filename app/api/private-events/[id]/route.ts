@@ -1,17 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
 
   try {
-    const { id } = params;
-
-    // Get event request
     const { data: event, error: eventError } = await supabaseAdmin
       .from('private_event_requests')
       .select('*')
@@ -19,27 +14,31 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      return Response.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Get messages for this event
+    // Fetch messages for this event
     const { data: messages, error: messagesError } = await supabaseAdmin
       .from('messages')
       .select('*')
-      .eq('thread_id', id)
+      .eq('thread_id', event.gmail_thread_id)
       .order('date', { ascending: true });
 
-    if (messagesError) throw messagesError;
+    if (messagesError) {
+      console.error('Error fetching messages:', messagesError);
+    }
 
-    return NextResponse.json({
-      success: true,
+    return Response.json({
       data: {
         ...event,
         messages: messages || [],
       },
     });
-  } catch (error: any) {
-    console.error('Error fetching private event:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    return Response.json(
+      { error: 'Failed to fetch event' },
+      { status: 500 }
+    );
   }
 }

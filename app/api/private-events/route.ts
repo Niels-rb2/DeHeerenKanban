@@ -1,14 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { PrivateEventRequest, ThreadStatus } from '@/lib/types';
 
-export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export async function GET(request: Request) {
   try {
     const { data, error } = await supabaseAdmin
       .from('private_event_requests')
@@ -27,16 +20,19 @@ export async function GET(req: NextRequest) {
       ARCHIVE: [],
     };
 
-    (data || []).forEach(request => {
-      const status = request.status as ThreadStatus;
-      if (grouped[status]) {
-        grouped[status].push(request);
+    (data || []).forEach((event: any) => {
+      const status = event.status as ThreadStatus;
+      if (status in grouped) {
+        grouped[status].push(event);
       }
     });
 
-    return NextResponse.json({ success: true, data: grouped });
-  } catch (error: any) {
+    return Response.json({ data: grouped });
+  } catch (error) {
     console.error('Error fetching private events:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return Response.json(
+      { error: 'Failed to fetch events' },
+      { status: 500 }
+    );
   }
 }

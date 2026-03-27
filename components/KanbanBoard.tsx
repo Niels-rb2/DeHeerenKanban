@@ -6,6 +6,8 @@ import { PrivateEventRequest, ThreadStatus } from '@/lib/types';
 import { EventCard } from './EventCard';
 import { STATUS_LABELS } from '@/lib/utils';
 
+const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 const COLUMNS: {
   status: ThreadStatus;
   borderColor: string;
@@ -90,15 +92,29 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
       return newEvents;
     });
 
-    // Persist to API
-    try {
-      const response = await fetch(`/api/private-events/${event.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: destStatus }),
-      });
+    // Persist to API (skip in demo mode)
+    if (!isDemo) {
+      try {
+        const response = await fetch(`/api/private-events/${event.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: destStatus }),
+        });
 
-      if (!response.ok) {
+        if (!response.ok) {
+          // Rollback on failure
+          setEvents(prev => {
+            const newEvents = { ...prev };
+            newEvents[destStatus] = prev[destStatus].filter(e => e.id !== event.id);
+            newEvents[sourceStatus] = [
+              ...prev[sourceStatus],
+              { ...event, status: sourceStatus },
+            ];
+            return newEvents;
+          });
+        }
+      } catch (error) {
+        console.error('Failed to update event status:', error);
         // Rollback on failure
         setEvents(prev => {
           const newEvents = { ...prev };
@@ -110,18 +126,6 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
           return newEvents;
         });
       }
-    } catch (error) {
-      console.error('Failed to update event status:', error);
-      // Rollback on failure
-      setEvents(prev => {
-        const newEvents = { ...prev };
-        newEvents[destStatus] = prev[destStatus].filter(e => e.id !== event.id);
-        newEvents[sourceStatus] = [
-          ...prev[sourceStatus],
-          { ...event, status: sourceStatus },
-        ];
-        return newEvents;
-      });
     }
   }
 

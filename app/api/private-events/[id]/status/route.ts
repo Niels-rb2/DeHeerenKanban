@@ -1,29 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ThreadStatus } from '@/lib/types';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const { status } = await request.json();
+
+  // Validate status
+  const validStatuses: ThreadStatus[] = [
+    'TO_ANSWER',
+    'ANSWERED',
+    'CONSULTATION_PLANNED',
+    'GO',
+    'NO_GO',
+    'ARCHIVE',
+  ];
+
+  if (!validStatuses.includes(status)) {
+    return Response.json({ error: 'Invalid status' }, { status: 400 });
   }
 
   try {
-    const { id } = params;
-    const body = await req.json();
-    const { status } = body;
+    const updateData: any = { status };
 
-    if (!status || !['TO_ANSWER', 'ANSWERED', 'CONSULTATION_PLANNED', 'GO', 'NO_GO', 'ARCHIVE'].includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-    }
-
-    const updateData: any = {
-      status: status as ThreadStatus,
-      updated_at: new Date().toISOString(),
-    };
-
-    // If status is ARCHIVE, set archived_at
+    // Set archived_at if moving to ARCHIVE
     if (status === 'ARCHIVE') {
       updateData.archived_at = new Date().toISOString();
     }
@@ -36,12 +38,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       .single();
 
     if (error || !data) {
-      return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
+      return Response.json({ error: 'Failed to update status' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
+    return Response.json({ data });
+  } catch (error) {
     console.error('Error updating status:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return Response.json(
+      { error: 'Failed to update status' },
+      { status: 500 }
+    );
   }
 }
