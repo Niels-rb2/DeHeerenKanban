@@ -140,55 +140,29 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
   }
 
   return (
-    <div className="flex flex-col -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
-
-      {/* ── Nav-balk: logo + terug-knop ── */}
-      <div className="flex items-center gap-3 shrink-0 px-6 py-4 border-b" style={{ borderColor: 'var(--clr-outline)' }}>
-        <Link href="/dashboard" aria-label="Café De Heeren – home" className="shrink-0">
-          <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[140px] h-auto" />
-        </Link>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors"
-          style={{
-            background: 'var(--clr-surface-low)',
-            border: '1px solid var(--clr-outline-dim)',
-            color: 'var(--clr-text-dim)',
-          }}
-        >
-          <ChevronLeft size={14} />
-          Dashboard
-        </Link>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Dark mode toggle */}
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="w-9 h-9 flex items-center justify-center rounded-full transition-colors shrink-0"
-          style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
-          aria-label="Wissel thema"
-        >
-          {mounted && (theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />)}
-        </button>
-
-        {/* Instellingen */}
-        <Link
-          href="/dashboard/settings"
-          className="w-9 h-9 flex items-center justify-center rounded-full transition-colors shrink-0"
-          style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
-          aria-label="Instellingen"
-        >
-          <Settings size={15} />
-        </Link>
-      </div>
-
-      {/* ── Twee kolommen ── */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+    <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
 
       {/* ═══ LEFT — Overzicht & gegevens ═════════════════ */}
       <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto px-6 py-5">
+
+        {/* ── Logo + terug-knop (scrollen mee) ── */}
+        <div className="flex flex-col items-start gap-2 pb-1">
+          <Link href="/dashboard" aria-label="Café De Heeren – home">
+            <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[140px] h-auto" />
+          </Link>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors"
+            style={{
+              background: 'var(--clr-surface-low)',
+              border: '1px solid var(--clr-outline-dim)',
+              color: 'var(--clr-text-dim)',
+            }}
+          >
+            <ChevronLeft size={14} />
+            Dashboard
+          </Link>
+        </div>
 
         {/* ── Titelblok (geen kaart) ── */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1">
@@ -203,8 +177,9 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
             </p>
           </div>
 
-          {/* Status + controls — rechts uitgelijnd */}
+          {/* Status + dark mode + instellingen */}
           <div className="flex items-end gap-3 shrink-0">
+            {/* Status */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-medium uppercase tracking-widest"
                 style={{ color: 'var(--clr-text-muted)' }}>
@@ -228,6 +203,26 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
                   style={{ color: 'var(--clr-text-muted)' }} />
               </div>
             </div>
+
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors shrink-0"
+              style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+              aria-label="Wissel thema"
+            >
+              {mounted && (theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />)}
+            </button>
+
+            {/* Instellingen */}
+            <Link
+              href="/dashboard/settings"
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors shrink-0"
+              style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+              aria-label="Instellingen"
+            >
+              <Settings size={15} />
+            </Link>
           </div>
         </div>
 
@@ -487,8 +482,6 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
           )}
         </div>
       </div>
-
-      </div>{/* ── einde twee kolommen ── */}
     </div>
   );
 }
