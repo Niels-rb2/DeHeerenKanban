@@ -143,7 +143,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
     <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
 
       {/* ═══ LEFT — Overzicht & gegevens ═════════════════ */}
-      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto py-5">
+      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto py-5 pr-8">
 
         {/* ── Logo + terug-knop (scrollen mee) ── */}
         <div className="flex flex-col items-start gap-2 pb-1" style={{ paddingLeft: '20px' }}>
