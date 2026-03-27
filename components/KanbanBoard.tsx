@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Thread, ThreadStatus } from '@/lib/types';
-import { ThreadCard } from './ThreadCard';
+import { useState } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { PrivateEventRequest, ThreadStatus } from '@/lib/types';
+import { EventCard } from './EventCard';
 import { STATUS_LABELS } from '@/lib/utils';
 
 const COLUMNS: {
@@ -12,25 +13,31 @@ const COLUMNS: {
   badgeBg: string;
 }[] = [
   {
-    status: 'TODO_REPLY',
+    status: 'TO_ANSWER',
     borderColor: '#d97706',
     headerCls: 'kanban-header-orange',
     badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   },
   {
-    status: 'REPLIED_NO_APPOINTMENT',
+    status: 'ANSWERED',
     borderColor: '#3b82f6',
     headerCls: 'kanban-header-blue',
     badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   },
   {
-    status: 'APPOINTMENT_SET',
+    status: 'CONSULTATION_PLANNED',
+    borderColor: '#9333ea',
+    headerCls: 'kanban-header-purple',
+    badgeBg: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  },
+  {
+    status: 'GO',
     borderColor: '#16a34a',
     headerCls: 'kanban-header-green',
     badgeBg: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   },
   {
-    status: 'CANCELLED',
+    status: 'NO_GO',
     borderColor: '#dc2626',
     headerCls: 'kanban-header-red',
     badgeBg: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
@@ -44,141 +51,153 @@ const COLUMNS: {
 ];
 
 interface KanbanBoardProps {
-  threads: Thread[];
+  events: Record<ThreadStatus, PrivateEventRequest[]>;
 }
 
-export function KanbanBoard({ threads: initialThreads }: KanbanBoardProps) {
-  const [threads, setThreads] = useState<Thread[]>(initialThreads);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [overColumn, setOverColumn] = useState<ThreadStatus | null>(null);
-  const dragThread = useRef<Thread | null>(null);
+export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
+  const [events, setEvents] = useState(initialEvents);
 
-  const byStatus = (status: ThreadStatus) => threads.filter(t => t.status === status);
+  const byStatus = (status: ThreadStatus) => events[status] || [];
 
-  /* ── Drag handlers on card ── */
-  function onDragStart(thread: Thread) {
-    dragThread.current = thread;
-    setDraggingId(thread.id);
-  }
+  async function onDragEnd(result: DropResult) {
+    const { source, destination, draggableId } = result;
 
-  function onDragEnd() {
-    setDraggingId(null);
-    setOverColumn(null);
-    dragThread.current = null;
-  }
+    // Dropped outside a droppable area
+    if (!destination) return;
 
-  /* ── Drop handlers on column ── */
-  function onDragOver(e: React.DragEvent, status: ThreadStatus) {
-    e.preventDefault();
-    setOverColumn(status);
-  }
+    // Dropped in same position
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return;
+    }
 
-  function onDragLeave() {
-    setOverColumn(null);
-  }
+    const sourceStatus = source.droppableId as ThreadStatus;
+    const destStatus = destination.droppableId as ThreadStatus;
+    const event = events[sourceStatus]?.[source.index];
 
-  async function onDrop(e: React.DragEvent, targetStatus: ThreadStatus) {
-    e.preventDefault();
-    setOverColumn(null);
+    if (!event || event.id !== draggableId) return;
 
-    const thread = dragThread.current;
-    if (!thread || thread.status === targetStatus) return;
+    // Skip if same status
+    if (sourceStatus === destStatus) return;
 
     // Optimistic update
-    setThreads(prev =>
-      prev.map(t => t.id === thread.id ? { ...t, status: targetStatus } : t)
-    );
+    setEvents(prev => {
+      const newEvents = { ...prev };
+      newEvents[sourceStatus] = prev[sourceStatus].filter(e => e.id !== event.id);
+      newEvents[destStatus] = [
+        ...prev[destStatus],
+        { ...event, status: destStatus },
+      ];
+      return newEvents;
+    });
 
     // Persist to API
     try {
-      await fetch(`/api/threads/${thread.id}`, {
+      const response = await fetch(`/api/private-events/${event.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: targetStatus }),
+        body: JSON.stringify({ status: destStatus }),
       });
-    } catch {
+
+      if (!response.ok) {
+        // Rollback on failure
+        setEvents(prev => {
+          const newEvents = { ...prev };
+          newEvents[destStatus] = prev[destStatus].filter(e => e.id !== event.id);
+          newEvents[sourceStatus] = [
+            ...prev[sourceStatus],
+            { ...event, status: sourceStatus },
+          ];
+          return newEvents;
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update event status:', error);
       // Rollback on failure
-      setThreads(prev =>
-        prev.map(t => t.id === thread.id ? { ...t, status: thread.status } : t)
-      );
+      setEvents(prev => {
+        const newEvents = { ...prev };
+        newEvents[destStatus] = prev[destStatus].filter(e => e.id !== event.id);
+        newEvents[sourceStatus] = [
+          ...prev[sourceStatus],
+          { ...event, status: sourceStatus },
+        ];
+        return newEvents;
+      });
     }
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollSnapType: 'x proximity' }}>
-      {COLUMNS.map((col) => {
-        const colThreads = byStatus(col.status);
-        const isOver = overColumn === col.status;
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollSnapType: 'x proximity' }}>
+        {COLUMNS.map((col) => {
+          const colEvents = byStatus(col.status);
 
-        return (
-          <div
-            key={col.status}
-            className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0 transition-all duration-150"
-            onDragOver={(e) => onDragOver(e, col.status)}
-            onDragLeave={onDragLeave}
-            onDrop={(e) => onDrop(e, col.status)}
-            style={{
-              background: isOver ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
-              borderLeft: `3px solid ${col.borderColor}`,
-              outline: isOver ? `2px dashed ${col.borderColor}` : '2px solid transparent',
-              width: 'calc(20% - 13px)',
-              minWidth: '240px',
-              scrollSnapAlign: 'start',
-            }}
-          >
-            {/* Column header */}
-            <div className="flex items-center justify-between px-1">
-              <h3 className={`text-sm font-semibold ${col.headerCls}`}>
-                {STATUS_LABELS[col.status]}
-              </h3>
-              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${col.badgeBg}`}>
-                {colThreads.length}
-              </span>
-            </div>
-
-            {/* Thread cards */}
-            {colThreads.length === 0 ? (
-              <div
-                className="flex-1 flex items-center justify-center text-sm rounded-xl py-8 transition-colors"
-                style={{
-                  color: isOver ? col.borderColor : 'var(--clr-text-subtle)',
-                  border: `1px dashed ${isOver ? col.borderColor : 'var(--clr-outline-dim)'}`,
-                }}
-              >
-                {isOver ? 'Loslaten om te verplaatsen' : 'Geen gesprekken'}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {colThreads.map((thread) => (
-                  <div
-                    key={thread.id}
-                    draggable
-                    onDragStart={() => onDragStart(thread)}
-                    onDragEnd={onDragEnd}
-                    className="transition-opacity duration-150"
-                    style={{ opacity: draggingId === thread.id ? 0.4 : 1 }}
-                  >
-                    <ThreadCard thread={thread} />
+          return (
+            <Droppable droppableId={col.status} key={col.status} type="EVENT">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0 transition-all duration-150"
+                  style={{
+                    background: snapshot.isDraggingOver ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
+                    borderLeft: `3px solid ${col.borderColor}`,
+                    outline: snapshot.isDraggingOver ? `2px dashed ${col.borderColor}` : '2px solid transparent',
+                    width: 'calc(16.666% - 13px)',
+                    minWidth: '240px',
+                    scrollSnapAlign: 'start',
+                  }}
+                >
+                  {/* Column header */}
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className={`text-sm font-semibold ${col.headerCls}`}>
+                      {STATUS_LABELS[col.status]}
+                    </h3>
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${col.badgeBg}`}>
+                      {colEvents.length}
+                    </span>
                   </div>
-                ))}
 
-                {/* Drop hint at bottom when dragging over a non-empty column */}
-                {isOver && draggingId && (
-                  <div
-                    className="rounded-xl py-3 text-center text-xs transition-colors"
-                    style={{
-                      border: `1px dashed ${col.borderColor}`,
-                      color: col.borderColor,
-                    }}
-                  >
-                    Loslaten om te verplaatsen
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+                  {/* Event cards */}
+                  {colEvents.length === 0 ? (
+                    <div
+                      className="flex-1 flex items-center justify-center text-sm rounded-xl py-8 transition-colors"
+                      style={{
+                        color: snapshot.isDraggingOver ? col.borderColor : 'var(--clr-text-subtle)',
+                        border: `1px dashed ${snapshot.isDraggingOver ? col.borderColor : 'var(--clr-outline-dim)'}`,
+                      }}
+                    >
+                      {snapshot.isDraggingOver ? 'Loslaten om te verplaatsen' : 'Geen verzoeken'}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {colEvents.map((event, index) => (
+                        <Draggable key={event.id} draggableId={event.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="transition-all duration-150"
+                              style={{
+                                opacity: snapshot.isDragging ? 0.5 : 1,
+                                transform: snapshot.isDragging ? 'rotate(2deg)' : 'rotate(0deg)',
+                                ...provided.draggableProps.style,
+                              }}
+                            >
+                              <EventCard event={event} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </div>
+              )}
+            </Droppable>
+          );
+        })}
+      </div>
+    </DragDropContext>
   );
 }
