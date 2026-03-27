@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
 import { PrivateEventRequest, ThreadStatus, Message } from '@/lib/types';
 import { formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
 import {
-  Calendar, Users, Sparkles, ChevronDown, ChevronLeft,
+  Calendar, Users, Sparkles, ChevronDown,
   Info, StickyNote, CheckCircle2, Circle, Clock, PartyPopper,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -110,25 +108,6 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
     <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
       {/* ═══ LEFT — Event details ═════════════════ */}
       <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto pr-8">
-        {/* Logo + back button */}
-        <div className="flex flex-col items-start gap-0">
-          <Link href="/private-events" aria-label="Café De Heeren – feestjes" className="w-[160px] h-[64px] m-5 block">
-            <Image src="/logo.svg" alt="Café De Heeren" width={160} height={64} priority className="w-full h-full object-contain" />
-          </Link>
-          <Link
-            href="/private-events"
-            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors mb-5 ml-5"
-            style={{
-              background: 'var(--clr-surface-low)',
-              border: '1px solid var(--clr-outline-dim)',
-              color: 'var(--clr-text-dim)',
-            }}
-          >
-            <ChevronLeft size={14} />
-            Feestjes
-          </Link>
-        </div>
-
         {/* Title block */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1 px-5">
           <div className="min-w-0">
