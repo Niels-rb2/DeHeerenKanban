@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Tailwind v4: gebruik .dark klasse ipv prefers-color-scheme */
+@variant dark (&:where(.dark, .dark *));
+
 /* ─── Google Sans ─── */
 @font-face {
   font-family: "Google Sans";
@@ -39,6 +42,8 @@
   --clr-surface-low:     #F5EDE8;
   --clr-surface-variant: #EDE7E4;
   --clr-surface-hover:   #F0EAE6;
+  --clr-input:           #FFFFFF;
+  --clr-input-border:    #DDD5D0;
   --clr-nav-active:      #FFEDD5;
   --clr-text:            #231917;
   --clr-text-dim:        #6B5E58;
@@ -80,6 +85,8 @@
   --clr-surface-low:     #2B2722;
   --clr-surface-variant: #332E29;
   --clr-surface-hover:   #332E29;
+  --clr-input:           #1C1917;
+  --clr-input-border:    rgba(237,228,222,0.30);
   --clr-nav-active:      #2B2722;
   --clr-text:            #EDE4DE;
   --clr-text-dim:        #C4B9B2;
@@ -218,9 +225,9 @@ html.dark [class*="hover:text-[#231917]"]:hover { color: #EDE4DE !important; }
 /* Forms */
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea {
-  background-color: #2B2722 !important;
+  background-color: var(--clr-input) !important;
   color: #EDE4DE !important;
-  border-color: #332E29 !important;
+  border-color: rgba(237,228,222,0.35) !important;
 }
 html.dark input::placeholder,
 html.dark textarea::placeholder { color: #6B6460 !important; }

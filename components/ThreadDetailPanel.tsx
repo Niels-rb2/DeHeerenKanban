@@ -1,13 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Thread, ThreadStatus, Message } from '@/lib/types';
 import { formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
 import {
-  Calendar, Users, Sparkles, Save, ChevronDown,
+  Calendar, Users, Sparkles, Save, ChevronDown, ChevronLeft,
   MessageSquare, Info, StickyNote, UserCheck,
+  CheckCircle2, Circle, Clock, PartyPopper, FileText,
+  Moon, Sun, Settings,
 } from 'lucide-react';
+import Image from 'next/image';
+import { DatePickerInput } from './DatePickerInput';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
+import Link from 'next/link';
 
 const STATUS_OPTIONS: ThreadStatus[] = [
   'TODO_REPLY',
@@ -64,6 +70,9 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
   const messages: Message[] = thread.messages || [];
 
   /* ── State ── */
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [status, setStatus]         = useState<ThreadStatus>(thread.status);
   const [notes, setNotes]           = useState(thread.notes || '');
   const [assignedTo, setAssignedTo] = useState(thread.assigned_to || '');
@@ -131,68 +140,181 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 h-full">
+    <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
 
       {/* ═══ LEFT — Overzicht & gegevens ═════════════════ */}
-      <div
-        className="w-full lg:w-[380px] shrink-0 flex flex-col gap-4 overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 180px)' }}
-      >
-        {/* Contact + status */}
-        <div className="bento-card">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="min-w-0">
-              <p className="text-base font-semibold leading-tight truncate" style={{ color: 'var(--clr-text)' }}>
-                {thread.contact_name || thread.contact_email}
-              </p>
-              {thread.contact_name && (
-                <p className="text-xs truncate mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
-                  {thread.contact_email}
-                </p>
-              )}
-            </div>
-            <span className={`badge text-xs shrink-0 ${STATUS_COLORS[thread.status]}`}>
-              {STATUS_LABELS[thread.status]}
-            </span>
+      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto px-6 py-4">
+
+        {/* ── Logo + terug-knop ── */}
+        <div className="flex items-center gap-4 pb-1">
+          <Link href="/dashboard" aria-label="Café De Heeren – home" className="shrink-0">
+            <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[140px] h-auto" />
+          </Link>
+          <div className="h-5 w-px shrink-0" style={{ background: 'var(--clr-outline-dim)' }} />
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors"
+            style={{
+              background: 'var(--clr-surface-low)',
+              border: '1px solid var(--clr-outline-dim)',
+              color: 'var(--clr-text-dim)',
+            }}
+          >
+            <ChevronLeft size={14} />
+            Dashboard
+          </Link>
+        </div>
+
+        {/* ── Titelblok (geen kaart) ── */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1">
+
+          {/* Naam + onderwerp */}
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold leading-tight" style={{ color: 'var(--clr-text)' }}>
+              {thread.contact_name || thread.contact_email}
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>
+              {thread.subject}
+            </p>
           </div>
 
-          {/* Status selector */}
-          <div className="relative">
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ThreadStatus)}
-              className="input-dark appearance-none pr-8 cursor-pointer w-full text-sm"
+          {/* Status + controls — rechts uitgelijnd */}
+          <div className="flex items-end gap-3 shrink-0">
+            <div className="flex flex-col gap-1 items-end">
+              <label className="text-[10px] font-medium uppercase tracking-widest"
+                style={{ color: 'var(--clr-text-muted)' }}>
+                Status
+              </label>
+              <div className="relative">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as ThreadStatus)}
+                  className="rounded-full px-4 py-2 text-sm appearance-none cursor-pointer pr-8 transition-colors focus:outline-none border border-[#DDD5D0] dark:border-white/35"
+                  style={{
+                    background: 'var(--clr-input)',
+                    color: 'var(--clr-text)',
+                  }}
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                  ))}
+                </select>
+                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: 'var(--clr-text-muted)' }} />
+              </div>
+            </div>
+
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors shrink-0"
+              style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+              aria-label="Wissel thema"
             >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-              ))}
-            </select>
-            <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ color: 'var(--clr-text-muted)' }} />
+              {mounted && (theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />)}
+            </button>
+
+            {/* Instellingen */}
+            <Link
+              href="/dashboard/settings"
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors shrink-0"
+              style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+              aria-label="Instellingen"
+            >
+              <Settings size={15} />
+            </Link>
           </div>
         </div>
 
-        {/* AI Samenvatting */}
+        {/* AI Samenvatting — checklist */}
         <div className="bento-card">
-          <SectionLabel icon={Info} label="AI samenvatting" />
-          {thread.extracted_summary ? (
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--clr-text-dim)' }}>
-              {thread.extracted_summary}
-            </p>
-          ) : (
-            <p className="text-sm italic" style={{ color: 'var(--clr-text-subtle)' }}>
-              Nog geen samenvatting — klik op Nieuwe extractie.
-            </p>
+          <div className="flex items-center justify-between mb-3">
+            <SectionLabel icon={Info} label="Specificaties feestje" />
+            {appt && (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}>
+                {Math.round(appt.confidence * 100)}% zekerheid
+              </span>
+            )}
+          </div>
+
+          {/* Checklist items */}
+          <ul className="space-y-2">
+            {[
+              {
+                icon: Calendar,
+                label: 'Datum',
+                value: appt?.appointment?.date
+                  ? new Date(appt.appointment.date).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                  : null,
+              },
+              {
+                icon: Clock,
+                label: 'Tijdstip',
+                value: appt?.appointment?.time ?? null,
+              },
+              {
+                icon: Users,
+                label: 'Aantal personen',
+                value: appt?.appointment?.partySize ? `${appt.appointment.partySize} personen` : null,
+              },
+              {
+                icon: PartyPopper,
+                label: 'Gelegenheid',
+                value: appt?.appointment?.occasion
+                  ? appt.appointment.occasion.charAt(0).toUpperCase() + appt.appointment.occasion.slice(1)
+                  : null,
+              },
+              {
+                icon: FileText,
+                label: 'Bijzonderheden',
+                value: appt?.appointment?.notes ?? null,
+              },
+            ].map(({ icon: Icon, label, value }) => (
+              <li key={label} className="flex items-start gap-2.5">
+                {value ? (
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-green-500" />
+                ) : (
+                  <Circle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--clr-text-subtle)' }} />
+                )}
+                <div className="min-w-0">
+                  <span className="text-xs font-medium" style={{ color: 'var(--clr-text-muted)' }}>{label}: </span>
+                  {value ? (
+                    <span className="text-xs" style={{ color: 'var(--clr-text)' }}>{value}</span>
+                  ) : (
+                    <span className="text-xs italic" style={{ color: 'var(--clr-text-subtle)' }}>Onbekend</span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Key evidence */}
+          {appt?.keyEvidence && appt.keyEvidence.length > 0 && (
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--clr-outline)' }}>
+              <p className="text-[10px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--clr-text-muted)' }}>
+                Bewijs uit conversatie
+              </p>
+              <ul className="space-y-1">
+                {appt.keyEvidence.map((ev: string, i: number) => (
+                  <li key={i} className="text-xs italic px-2 py-1 rounded-lg"
+                    style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-dim)' }}>
+                    "{ev}"
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
-          {appt && (
-            <p className="mt-2 text-xs" style={{ color: 'var(--clr-text-subtle)' }}>
-              Zekerheid: {Math.round(appt.confidence * 100)}%
+
+          {!appt && !thread.extracted_summary && (
+            <p className="text-sm italic" style={{ color: 'var(--clr-text-subtle)' }}>
+              Nog geen extractie — klik op Nieuwe extractie.
             </p>
           )}
           <button
             onClick={handleExtract}
             disabled={extracting}
-            className="mt-3 w-full btn-gold text-xs flex items-center justify-center gap-1.5 py-2"
+            className="mt-3 btn-gold text-xs inline-flex items-center gap-1.5 py-2 px-4 self-start"
           >
             <Sparkles size={12} />
             {extracting ? 'Bezig…' : 'Nieuwe extractie'}
@@ -200,24 +322,23 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
         </div>
 
         {/* Feestjegegevens */}
-        <div className="bento-card space-y-3">
+        <div className="bento-card space-y-3" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
           <SectionLabel icon={Calendar} label="Feestjegegevens" />
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Datum feestje">
-              <input
-                type="date"
-                value={apptDate}
-                onChange={(e) => setApptDate(e.target.value)}
-                className="input-dark text-sm w-full"
-              />
+              <DatePickerInput value={apptDate} onChange={setApptDate} />
             </Field>
             <Field label="Tijdstip">
               <input
                 type="time"
                 value={apptTime}
                 onChange={(e) => setApptTime(e.target.value)}
-                className="input-dark text-sm w-full"
+                className="w-full rounded-full px-4 py-2.5 text-sm transition-colors focus:outline-none border border-[#DDD5D0] dark:border-white/35 appearance-none"
+                style={{
+                  background: 'var(--clr-input)',
+                  color: apptTime ? 'var(--clr-text)' : 'var(--clr-text-subtle)',
+                }}
               />
             </Field>
           </div>
@@ -229,8 +350,12 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
                 min={1}
                 value={partySize}
                 onChange={(e) => setPartySize(e.target.value)}
-                placeholder="0"
-                className="input-dark text-sm w-full"
+                placeholder="Aantal"
+                className="w-full rounded-full px-4 py-2.5 text-sm transition-colors focus:outline-none border border-[#DDD5D0] dark:border-white/35 appearance-none"
+                style={{
+                  background: 'var(--clr-input)',
+                  color: 'var(--clr-text)',
+                }}
               />
             </Field>
             <Field label="Gelegenheid">
@@ -238,13 +363,17 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
                 <select
                   value={occasion}
                   onChange={(e) => setOccasion(e.target.value)}
-                  className="input-dark appearance-none pr-7 cursor-pointer w-full text-sm"
+                  className="w-full rounded-full px-4 py-2.5 text-sm appearance-none cursor-pointer pr-9 transition-colors focus:outline-none border border-[#DDD5D0] dark:border-white/35"
+                  style={{
+                    background: 'var(--clr-input)',
+                    color: 'var(--clr-text)',
+                  }}
                 >
                   {OCCASION_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
-                <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                <ChevronDown size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   style={{ color: 'var(--clr-text-muted)' }} />
               </div>
             </Field>
@@ -256,57 +385,37 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
               onChange={(e) => setBijzonderheden(e.target.value)}
               rows={2}
               placeholder="Dieetwensen, thema, speciale verzoeken…"
-              className="input-dark resize-none text-sm w-full"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm resize-none transition-colors focus:outline-none border border-[#DDD5D0] dark:border-white/35"
+              style={{
+                background: 'var(--clr-input)',
+                color: 'var(--clr-text)',
+              }}
             />
           </Field>
         </div>
 
         {/* Notities */}
-        <div className="bento-card">
+        <div className="bento-card" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
           <SectionLabel icon={StickyNote} label="Interne notities" />
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="Interne aantekeningen (niet zichtbaar voor gast)…"
-            className="input-dark resize-none text-sm w-full"
+            className="w-full rounded-2xl px-4 py-2.5 text-sm resize-none transition-colors focus:outline-none border border-[#DDD5D0] dark:border-white/35"
+            style={{
+              background: 'var(--clr-input)',
+              color: 'var(--clr-text)',
+            }}
           />
         </div>
 
-        {/* Toegewezen + ongelezen */}
-        <div className="bento-card space-y-3">
-          <SectionLabel icon={UserCheck} label="Beheer" />
-
-          <Field label="Toegewezen aan">
-            <input
-              type="text"
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
-              placeholder="Naam medewerker…"
-              className="input-dark text-sm w-full"
-            />
-          </Field>
-
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-xs" style={{ color: 'var(--clr-text-muted)' }}>Markeer als ongelezen</span>
-            <button
-              onClick={() => setHasUnread(!hasUnread)}
-              className={`relative w-10 h-6 rounded-full transition-colors ${
-                hasUnread ? 'bg-[#88280B]' : 'bg-gray-200 dark:bg-[#332E29]'
-              }`}
-            >
-              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${
-                hasUnread ? 'left-5' : 'left-1'
-              }`} />
-            </button>
-          </label>
-        </div>
 
         {/* Opslaan */}
         <button
           onClick={handleSave}
           disabled={saving}
-          className="btn-accent w-full flex items-center justify-center gap-2 text-sm"
+          className="btn-accent inline-flex items-center gap-2 text-sm self-start"
         >
           <Save size={14} />
           {saving ? 'Opslaan…' : 'Wijzigingen opslaan'}
@@ -314,24 +423,20 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
       </div>
 
       {/* ═══ RIGHT — E-mailwisseling (chat) ══════════════ */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="w-full lg:w-1/3 min-w-0 flex flex-col overflow-y-auto">
         {/* Chat header */}
-        <div
-          className="flex items-center gap-2 px-1 mb-3"
-        >
-          <MessageSquare size={13} style={{ color: 'var(--clr-text-muted)' }} />
-          <span
-            className="text-[10px] font-medium uppercase tracking-widest"
-            style={{ color: 'var(--clr-text-muted)' }}
-          >
-            E-mailwisseling · {messages.length} berichten
+        <div className="flex items-center justify-between px-1 mb-4 pt-1">
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--clr-text)' }}>
+            E-mail discussie
+          </h2>
+          <span className="text-xs" style={{ color: 'var(--clr-text-muted)' }}>
+            {messages.length} berichten
           </span>
         </div>
 
         {/* Messages */}
         <div
-          className="flex-1 overflow-y-auto space-y-4 pr-1"
-          style={{ maxHeight: 'calc(100vh - 220px)' }}
+          className="flex-1 space-y-4 pr-1"
         >
           {messages.length === 0 ? (
             <div

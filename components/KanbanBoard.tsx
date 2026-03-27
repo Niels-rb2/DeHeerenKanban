@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef } from 'react';
 import { Thread, ThreadStatus } from '@/lib/types';
 import { ThreadCard } from './ThreadCard';
 import { STATUS_LABELS } from '@/lib/utils';
@@ -46,20 +47,80 @@ interface KanbanBoardProps {
   threads: Thread[];
 }
 
-export function KanbanBoard({ threads }: KanbanBoardProps) {
+export function KanbanBoard({ threads: initialThreads }: KanbanBoardProps) {
+  const [threads, setThreads] = useState<Thread[]>(initialThreads);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overColumn, setOverColumn] = useState<ThreadStatus | null>(null);
+  const dragThread = useRef<Thread | null>(null);
+
   const byStatus = (status: ThreadStatus) => threads.filter(t => t.status === status);
+
+  /* ── Drag handlers on card ── */
+  function onDragStart(thread: Thread) {
+    dragThread.current = thread;
+    setDraggingId(thread.id);
+  }
+
+  function onDragEnd() {
+    setDraggingId(null);
+    setOverColumn(null);
+    dragThread.current = null;
+  }
+
+  /* ── Drop handlers on column ── */
+  function onDragOver(e: React.DragEvent, status: ThreadStatus) {
+    e.preventDefault();
+    setOverColumn(status);
+  }
+
+  function onDragLeave() {
+    setOverColumn(null);
+  }
+
+  async function onDrop(e: React.DragEvent, targetStatus: ThreadStatus) {
+    e.preventDefault();
+    setOverColumn(null);
+
+    const thread = dragThread.current;
+    if (!thread || thread.status === targetStatus) return;
+
+    // Optimistic update
+    setThreads(prev =>
+      prev.map(t => t.id === thread.id ? { ...t, status: targetStatus } : t)
+    );
+
+    // Persist to API
+    try {
+      await fetch(`/api/threads/${thread.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: targetStatus }),
+      });
+    } catch {
+      // Rollback on failure
+      setThreads(prev =>
+        prev.map(t => t.id === thread.id ? { ...t, status: thread.status } : t)
+      );
+    }
+  }
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollSnapType: 'x proximity' }}>
       {COLUMNS.map((col) => {
         const colThreads = byStatus(col.status);
+        const isOver = overColumn === col.status;
+
         return (
           <div
             key={col.status}
-            className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0"
+            className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0 transition-all duration-150"
+            onDragOver={(e) => onDragOver(e, col.status)}
+            onDragLeave={onDragLeave}
+            onDrop={(e) => onDrop(e, col.status)}
             style={{
-              background: 'var(--clr-surface-low)',
+              background: isOver ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
               borderLeft: `3px solid ${col.borderColor}`,
+              outline: isOver ? `2px dashed ${col.borderColor}` : '2px solid transparent',
               width: 'calc(20% - 13px)',
               minWidth: '240px',
               scrollSnapAlign: 'start',
@@ -78,16 +139,41 @@ export function KanbanBoard({ threads }: KanbanBoardProps) {
             {/* Thread cards */}
             {colThreads.length === 0 ? (
               <div
-                className="flex-1 flex items-center justify-center text-sm rounded-xl py-8"
-                style={{ color: 'var(--clr-text-subtle)', border: '1px dashed var(--clr-outline-dim)' }}
+                className="flex-1 flex items-center justify-center text-sm rounded-xl py-8 transition-colors"
+                style={{
+                  color: isOver ? col.borderColor : 'var(--clr-text-subtle)',
+                  border: `1px dashed ${isOver ? col.borderColor : 'var(--clr-outline-dim)'}`,
+                }}
               >
-                Geen gesprekken
+                {isOver ? 'Loslaten om te verplaatsen' : 'Geen gesprekken'}
               </div>
             ) : (
               <div className="flex flex-col gap-2">
                 {colThreads.map((thread) => (
-                  <ThreadCard key={thread.id} thread={thread} />
+                  <div
+                    key={thread.id}
+                    draggable
+                    onDragStart={() => onDragStart(thread)}
+                    onDragEnd={onDragEnd}
+                    className="transition-opacity duration-150"
+                    style={{ opacity: draggingId === thread.id ? 0.4 : 1 }}
+                  >
+                    <ThreadCard thread={thread} />
+                  </div>
                 ))}
+
+                {/* Drop hint at bottom when dragging over a non-empty column */}
+                {isOver && draggingId && (
+                  <div
+                    className="rounded-xl py-3 text-center text-xs transition-colors"
+                    style={{
+                      border: `1px dashed ${col.borderColor}`,
+                      color: col.borderColor,
+                    }}
+                  >
+                    Loslaten om te verplaatsen
+                  </div>
+                )}
               </div>
             )}
           </div>

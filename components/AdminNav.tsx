@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { RefreshCw, Settings, Moon, Sun, Search } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Suspense, useState, useTransition } from 'react';
+import { Suspense, useState, useTransition, useEffect } from 'react';
 import { toast } from 'sonner';
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
@@ -16,7 +16,10 @@ function AdminNavInner() {
   const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const [syncing, setSyncing] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [, startTransition] = useTransition();
+
+  useEffect(() => setMounted(true), []);
 
   const searchValue = searchParams.get('q') ?? '';
 
@@ -55,10 +58,13 @@ function AdminNavInner() {
   }
 
   const onDashboard = pathname === '/dashboard';
+  const onThread = pathname.startsWith('/thread/');
+
+  if (onThread) return null;
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 md:px-6 h-20 border-b"
+      className="sticky top-0 z-40 border-b flex items-center gap-3 px-4 md:px-6 h-20"
       style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)' }}
     >
       {/* Logo */}
@@ -66,7 +72,7 @@ function AdminNavInner() {
         <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[160px] h-auto" />
       </Link>
 
-      <div className="h-5 w-px shrink-0 mx-1" style={{ background: 'var(--clr-outline-dim)' }} />
+      {!onThread && <div className="h-5 w-px shrink-0 mx-1" style={{ background: 'var(--clr-outline-dim)' }} />}
 
       {/* Search — alleen zichtbaar op dashboard */}
       {onDashboard && (
@@ -102,47 +108,32 @@ function AdminNavInner() {
         </button>
       )}
 
-      {/* Dark mode toggle — Material You tonal icon button */}
-      <button
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
-        style={{
-          background: 'var(--clr-surface-low)',
-          color: 'var(--clr-text-muted)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--clr-surface-variant)';
-          e.currentTarget.style.color = 'var(--clr-text)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'var(--clr-surface-low)';
-          e.currentTarget.style.color = 'var(--clr-text-muted)';
-        }}
-        aria-label="Wissel thema"
-      >
-        {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-      </button>
-
-      {/* Settings — Material You tonal icon button */}
-      <Link
-        href="/dashboard/settings"
-        className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
-        style={{
-          background: pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
-          color: pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--clr-surface-variant)';
-          e.currentTarget.style.color = 'var(--clr-text)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)';
-          e.currentTarget.style.color = pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)';
-        }}
-        aria-label="Instellingen"
-      >
-        <Settings size={15} />
-      </Link>
+      {/* Dark mode toggle — verborgen op thread-pagina's (staat daar in de panel) */}
+      {!onThread && <>
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+          style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+          aria-label="Wissel thema"
+        >
+          {mounted && (theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />)}
+        </button>
+        <Link
+          href="/dashboard/settings"
+          className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+          style={{
+            background: pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
+            color: pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)'; e.currentTarget.style.color = pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)'; }}
+          aria-label="Instellingen"
+        >
+          <Settings size={15} />
+        </Link>
+      </>}
     </header>
   );
 }
