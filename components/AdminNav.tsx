@@ -74,7 +74,7 @@ function AdminNavInner() {
 
       {/* Search — alleen zichtbaar op dashboard */}
       {onDashboard && (
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-sm flex items-start">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
           <input
             type="text"
