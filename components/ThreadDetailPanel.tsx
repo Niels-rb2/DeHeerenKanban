@@ -143,16 +143,16 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
     <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
 
       {/* ═══ LEFT — Overzicht & gegevens ═════════════════ */}
-      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto py-5 pr-8">
+      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto pr-8">
 
         {/* ── Logo + terug-knop (scrollen mee) ── */}
-        <div className="flex flex-col items-start gap-2">
+        <div className="flex flex-col items-start gap-0">
           <Link href="/dashboard" aria-label="Café De Heeren – home" className="w-[160px] h-[64px] m-5 block">
             <Image src="/logo.svg" alt="Café De Heeren" width={160} height={64} priority className="w-full h-full object-contain" />
           </Link>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors ml-5"
+            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors mb-5 ml-5"
             style={{
               background: 'var(--clr-surface-low)',
               border: '1px solid var(--clr-outline-dim)',
@@ -165,7 +165,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
         </div>
 
         {/* ── Titelblok (geen kaart) ── */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1 px-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1 px-5 ml-0">
 
           {/* Naam + onderwerp */}
           <div className="min-w-0">
@@ -180,7 +180,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
           {/* Status + dark mode + instellingen */}
           <div className="flex items-start gap-3 shrink-0">
             {/* Status */}
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 items-start">
               <label className="text-[10px] font-medium uppercase tracking-widest"
                 style={{ color: 'var(--clr-text-muted)' }}>
                 Status
