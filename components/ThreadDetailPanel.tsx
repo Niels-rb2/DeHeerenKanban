@@ -148,7 +148,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
         {/* ── Logo + terug-knop (scrollen mee) ── */}
         <div className="flex flex-col items-start gap-2 pb-1">
           <Link href="/dashboard" aria-label="Café De Heeren – home">
-            <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[140px] h-auto" />
+            <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[160px] h-auto" />
           </Link>
           <Link
             href="/dashboard"
@@ -178,7 +178,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
           </div>
 
           {/* Status + dark mode + instellingen */}
-          <div className="flex items-end gap-3 shrink-0">
+          <div className="flex items-start gap-3 shrink-0">
             {/* Status */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-medium uppercase tracking-widest"
