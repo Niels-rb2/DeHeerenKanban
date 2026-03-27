@@ -64,7 +64,7 @@ function AdminNavInner() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b flex items-start gap-3"
+      className="sticky top-0 z-40 border-b flex items-center gap-3"
       style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)', paddingRight: '1.5rem' }}
     >
       {/* Logo */}
@@ -74,7 +74,7 @@ function AdminNavInner() {
 
       {/* Search — alleen zichtbaar op dashboard */}
       {onDashboard && (
-        <div className="relative flex-1 max-w-sm flex items-start">
+        <div className="relative flex-1 max-w-sm flex items-center">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
           <input
             type="text"
