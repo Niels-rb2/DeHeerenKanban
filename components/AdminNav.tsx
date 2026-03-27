@@ -58,7 +58,7 @@ function AdminNavInner() {
   }
 
   const onDashboard = pathname === '/dashboard';
-  const onThread = pathname.startsWith('/thread/');
+  const onThread = pathname.startsWith('/thread/') || pathname.startsWith('/private-events/');
 
   if (onThread) return null;
 
