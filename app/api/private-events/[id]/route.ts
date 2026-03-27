@@ -162,3 +162,44 @@ export async function GET(
     );
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+
+    // In demo mode, just return success (don't actually update)
+    if (isDemo) {
+      return Response.json({ success: true });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('private_event_requests')
+      .update({
+        event_date: body.event_date,
+        occasion_type: body.occasion_type,
+        start_time: body.start_time,
+        end_time: body.end_time,
+        guest_count: body.guest_count,
+        special_notes: body.special_notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return Response.json({ success: true, data });
+  } catch (error) {
+    console.error('Error updating event:', error);
+    return Response.json(
+      { error: 'Failed to update event' },
+      { status: 500 }
+    );
+  }
+}

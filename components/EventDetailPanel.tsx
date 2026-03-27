@@ -67,6 +67,15 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   const [reanalyzing, setReanalyzing] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+  // Editable fields
+  const [eventDate, setEventDate] = useState(event.event_date || '');
+  const [occasionType, setOccasionType] = useState(event.occasion_type || '');
+  const [startTime, setStartTime] = useState(event.start_time || '');
+  const [endTime, setEndTime] = useState(event.end_time || '');
+  const [guestCount, setGuestCount] = useState(event.guest_count?.toString() || '');
+  const [specialNotes, setSpecialNotes] = useState(event.special_notes || '');
+  const [savingDetails, setSavingDetails] = useState(false);
+
   async function handleReanalyze() {
     setReanalyzing(true);
     try {
@@ -103,6 +112,30 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
       setStatus(event.status);
     } finally {
       setUpdatingStatus(false);
+    }
+  }
+
+  async function handleSaveDetails() {
+    setSavingDetails(true);
+    try {
+      const res = await fetch(`/api/private-events/${event.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_date: eventDate || null,
+          occasion_type: occasionType || null,
+          start_time: startTime || null,
+          end_time: endTime || null,
+          guest_count: guestCount ? parseInt(guestCount) : null,
+          special_notes: specialNotes || null,
+        }),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      toast.success('Gegevens opgeslagen');
+    } catch {
+      toast.error('Opslaan mislukt');
+    } finally {
+      setSavingDetails(false);
     }
   }
 
@@ -252,18 +285,133 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
           </div>
         )}
 
-        {/* Event details card */}
+        {/* Event details card - editable form */}
         <div className="bento-card ml-5 mr-5" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
           <SectionLabel icon={Calendar} label="Details" />
-          <div className="space-y-2">
-            <Field label="E-mailadres">
-              <p className="text-sm" style={{ color: 'var(--clr-text)' }}>{event.sender_email}</p>
+          <div className="space-y-3">
+            {/* Datum feestje */}
+            <Field label="Datum feestje">
+              <input
+                type="date"
+                value={eventDate ? eventDate.split('T')[0] : ''}
+                onChange={(e) => setEventDate(e.target.value ? new Date(e.target.value).toISOString() : '')}
+                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--clr-input)',
+                  borderColor: 'var(--clr-outline)',
+                  color: 'var(--clr-text)',
+                }}
+              />
             </Field>
-            <Field label="Ontvangen">
-              <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
-                {new Date(event.created_at).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </p>
+
+            {/* Reden feestje (occasion) */}
+            <Field label="Reden feestje">
+              <select
+                value={occasionType}
+                onChange={(e) => setOccasionType(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--clr-input)',
+                  borderColor: 'var(--clr-outline)',
+                  color: 'var(--clr-text)',
+                }}
+              >
+                <option value="">-- Selecteer gelegenheid --</option>
+                <option value="verjaardag">🎂 Verjaardag</option>
+                <option value="receptie">🥂 Receptie</option>
+                <option value="borrel">🍺 Borrel</option>
+                <option value="diner">🍽️ Diner</option>
+                <option value="trouwerij">💍 Trouwerij</option>
+                <option value="bruiloft">💍 Bruiloft</option>
+                <option value="jubileum">🎉 Jubileum</option>
+                <option value="bedrijfsfeest">🎉 Bedrijfsfeest</option>
+                <option value="anders">🎉 Anders</option>
+              </select>
             </Field>
+
+            {/* Begintijd - Eindtijd */}
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Begintijd">
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                  style={{
+                    background: 'var(--clr-input)',
+                    borderColor: 'var(--clr-outline)',
+                    color: 'var(--clr-text)',
+                  }}
+                />
+              </Field>
+              <Field label="Eindtijd">
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                  style={{
+                    background: 'var(--clr-input)',
+                    borderColor: 'var(--clr-outline)',
+                    color: 'var(--clr-text)',
+                  }}
+                />
+              </Field>
+            </div>
+
+            {/* Aantal personen */}
+            <Field label="Aantal personen">
+              <input
+                type="number"
+                value={guestCount}
+                onChange={(e) => setGuestCount(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--clr-input)',
+                  borderColor: 'var(--clr-outline)',
+                  color: 'var(--clr-text)',
+                }}
+              />
+            </Field>
+
+            {/* Bijzonderheden */}
+            <Field label="Bijzonderheden">
+              <textarea
+                value={specialNotes}
+                onChange={(e) => setSpecialNotes(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 resize-none"
+                style={{
+                  background: 'var(--clr-input)',
+                  borderColor: 'var(--clr-outline)',
+                  color: 'var(--clr-text)',
+                }}
+              />
+            </Field>
+
+            {/* Contact info (read-only) */}
+            <div className="pt-2 border-t" style={{ borderColor: 'var(--clr-outline)' }}>
+              <Field label="E-mailadres">
+                <p className="text-sm" style={{ color: 'var(--clr-text)' }}>{event.sender_email}</p>
+              </Field>
+              <Field label="Ontvangen">
+                <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
+                  {new Date(event.created_at).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </Field>
+            </div>
+
+            {/* Save button */}
+            <button
+              onClick={handleSaveDetails}
+              disabled={savingDetails}
+              className="w-full btn-gold text-sm py-2 px-4 rounded-lg transition-all"
+              style={{
+                opacity: savingDetails ? 0.7 : 1,
+              }}
+            >
+              {savingDetails ? 'Bezig…' : 'Opslaan'}
+            </button>
           </div>
         </div>
       </div>
