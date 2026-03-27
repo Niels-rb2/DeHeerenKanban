@@ -7,7 +7,7 @@ export default async function PrivateEventPage({ params }: { params: Promise<{ i
   // Fetch event data from the API
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000';
+    : 'http://localhost:3011';
 
   try {
     const response = await fetch(`${baseUrl}/api/private-events/${id}`, {
