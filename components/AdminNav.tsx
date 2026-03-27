@@ -1,0 +1,156 @@
+'use client';
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { RefreshCw, Settings, Moon, Sun, Search } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Suspense, useState, useTransition } from 'react';
+import { toast } from 'sonner';
+
+const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+function AdminNavInner() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { theme, setTheme } = useTheme();
+  const [syncing, setSyncing] = useState(false);
+  const [, startTransition] = useTransition();
+
+  const searchValue = searchParams.get('q') ?? '';
+
+  function handleSearch(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set('q', value);
+    } else {
+      params.delete('q');
+    }
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    });
+  }
+
+  async function handleSync() {
+    if (isDemo) {
+      toast.info('Sync niet beschikbaar in demo-modus');
+      return;
+    }
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/gmail/sync', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`${data.synced} gesprekken gesynchroniseerd`);
+        router.refresh();
+      } else {
+        toast.error(data.error || 'Sync mislukt');
+      }
+    } catch {
+      toast.error('Sync mislukt');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  const onDashboard = pathname === '/dashboard';
+
+  return (
+    <header
+      className="fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 md:px-6 h-20 border-b"
+      style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)' }}
+    >
+      {/* Logo */}
+      <Link href="/dashboard" aria-label="Café De Heeren – home" className="shrink-0">
+        <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[160px] h-auto" />
+      </Link>
+
+      <div className="h-5 w-px shrink-0 mx-1" style={{ background: 'var(--clr-outline-dim)' }} />
+
+      {/* Search — alleen zichtbaar op dashboard */}
+      {onDashboard && (
+        <div className="relative flex-1 max-w-sm">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
+          <input
+            type="text"
+            defaultValue={searchValue}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Zoek op naam, e-mail of onderwerp…"
+            className="w-full pl-8 pr-3 py-2 rounded-full text-sm border focus:outline-none focus:ring-2 transition-all"
+            style={{
+              background: 'var(--clr-surface-low)',
+              borderColor: 'var(--clr-outline)',
+              color: 'var(--clr-text)',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Gmail Sync button — alleen op dashboard */}
+      {onDashboard && (
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="btn-accent flex items-center gap-2 text-sm py-2 px-4"
+        >
+          <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+          <span className="hidden sm:inline">{syncing ? 'Synchroniseren…' : 'Gmail Sync'}</span>
+        </button>
+      )}
+
+      {/* Dark mode toggle — Material You tonal icon button */}
+      <button
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+        style={{
+          background: 'var(--clr-surface-low)',
+          color: 'var(--clr-text-muted)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--clr-surface-variant)';
+          e.currentTarget.style.color = 'var(--clr-text)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'var(--clr-surface-low)';
+          e.currentTarget.style.color = 'var(--clr-text-muted)';
+        }}
+        aria-label="Wissel thema"
+      >
+        {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+      </button>
+
+      {/* Settings — Material You tonal icon button */}
+      <Link
+        href="/dashboard/settings"
+        className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+        style={{
+          background: pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
+          color: pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--clr-surface-variant)';
+          e.currentTarget.style.color = 'var(--clr-text)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)';
+          e.currentTarget.style.color = pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)';
+        }}
+        aria-label="Instellingen"
+      >
+        <Settings size={15} />
+      </Link>
+    </header>
+  );
+}
+
+export function AdminNav() {
+  return (
+    <Suspense fallback={null}>
+      <AdminNavInner />
+    </Suspense>
+  );
+}
