@@ -143,11 +143,11 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
     <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
 
       {/* ═══ LEFT — Overzicht & gegevens ═════════════════ */}
-      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto px-6 py-5">
+      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto py-5">
 
         {/* ── Logo + terug-knop (scrollen mee) ── */}
-        <div className="flex flex-col items-start gap-2 pb-1">
-          <Link href="/dashboard" aria-label="Café De Heeren – home" style={{ marginLeft: '-4px' }}>
+        <div className="flex flex-col items-start gap-2 pb-1" style={{ paddingLeft: '20px' }}>
+          <Link href="/dashboard" aria-label="Café De Heeren – home">
             <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[160px] h-auto" />
           </Link>
           <Link
@@ -165,7 +165,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
         </div>
 
         {/* ── Titelblok (geen kaart) ── */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1" style={{ paddingLeft: '20px' }}>
 
           {/* Naam + onderwerp */}
           <div className="min-w-0">
@@ -227,7 +227,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
         </div>
 
         {/* AI Samenvatting — checklist */}
-        <div className="bento-card">
+        <div className="bento-card" style={{ marginLeft: '20px' }}>
           <div className="flex items-center justify-between mb-3">
             <SectionLabel icon={Info} label="Specificaties feestje" />
             {appt && (
@@ -322,7 +322,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
         </div>
 
         {/* Feestjegegevens */}
-        <div className="bento-card space-y-3" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
+        <div className="bento-card space-y-3" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)', marginLeft: '20px' }}>
           <SectionLabel icon={Calendar} label="Feestjegegevens" />
 
           <div className="grid grid-cols-2 gap-3">
@@ -395,7 +395,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
         </div>
 
         {/* Notities */}
-        <div className="bento-card" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
+        <div className="bento-card" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)', marginLeft: '20px' }}>
           <SectionLabel icon={StickyNote} label="Interne notities" />
           <textarea
             value={notes}
@@ -416,6 +416,7 @@ export function ThreadDetailPanel({ thread, onUpdate }: ThreadDetailPanelProps) 
           onClick={handleSave}
           disabled={saving}
           className="btn-accent inline-flex items-center gap-2 text-sm self-start"
+          style={{ marginLeft: '20px' }}
         >
           <Save size={14} />
           {saving ? 'Opslaan…' : 'Wijzigingen opslaan'}
