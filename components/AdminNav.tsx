@@ -65,14 +65,12 @@ function AdminNavInner() {
   return (
     <header
       className="sticky top-0 z-40 border-b flex items-start gap-3"
-      style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)', paddingLeft: '20px', paddingRight: '1.5rem', paddingTop: '20px' }}
+      style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)', paddingRight: '1.5rem' }}
     >
       {/* Logo */}
-      <Link href="/dashboard" aria-label="Café De Heeren – home" className="shrink-0">
-        <Image src="/logo.svg" alt="Café De Heeren" width={400} height={160} priority className="w-[160px] h-auto" />
+      <Link href="/dashboard" aria-label="Café De Heeren – home" className="shrink-0 w-[160px] h-[64px] m-5 block">
+        <Image src="/logo.svg" alt="Café De Heeren" width={160} height={64} priority className="w-full h-full object-contain" />
       </Link>
-
-      {!onThread && <div className="h-5 w-px shrink-0 mx-1" style={{ background: 'var(--clr-outline-dim)' }} />}
 
       {/* Search — alleen zichtbaar op dashboard */}
       {onDashboard && (
