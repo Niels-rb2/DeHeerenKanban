@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { PrivateEventRequest } from '@/lib/types';
 import { formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
 import { Calendar, Users } from 'lucide-react';
@@ -22,13 +22,11 @@ interface EventCardProps {
 }
 
 export function EventCard({ event }: EventCardProps) {
-  const router = useRouter();
-
   return (
-    <div
-      className="glass-card-hover rounded-2xl p-4 cursor-pointer"
-      onClick={() => router.push(`/private-events/${event.id}`)}
-    >
+    <Link href={`/private-events/${event.id}`} className="block">
+      <div
+        className="glass-card-hover rounded-2xl p-4 cursor-pointer"
+      >
       {/* Contact */}
       <div className="flex items-start gap-2 mb-2 pr-4">
         <div className="flex-1 min-w-0">
@@ -88,6 +86,7 @@ export function EventCard({ event }: EventCardProps) {
           {event.ai_summary}
         </p>
       )}
-    </div>
+      </div>
+    </Link>
   );
 }
