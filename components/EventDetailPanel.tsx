@@ -427,7 +427,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
           </span>
         </div>
 
-        {/* Messages */}
+        {/* Messages — nieuwste bovenaan */}
         <div className="flex-1 space-y-4 pr-1">
           {messages.length === 0 ? (
             <div
@@ -437,12 +437,19 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
               Geen berichten geladen
             </div>
           ) : (
-            messages.map((msg) => {
+            [...messages].reverse().map((msg) => {
               const isOut = msg.direction === 'OUTBOUND';
+              const msgDate = new Date(msg.date);
+              const dateStr = msgDate.toLocaleDateString('nl-NL', {
+                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+              });
+              const timeStr = msgDate.toLocaleTimeString('nl-NL', {
+                hour: '2-digit', minute: '2-digit',
+              });
               return (
                 <div key={msg.id} className={`flex ${isOut ? 'justify-end' : 'justify-start'}`}>
                   <div className="max-w-[82%]">
-                    {/* Sender + time */}
+                    {/* Sender + date + time */}
                     <div className={`flex items-center gap-1.5 mb-1 ${isOut ? 'justify-end' : 'justify-start'}`}>
                       {!isOut && (
                         <span className="text-xs font-semibold" style={{ color: 'var(--clr-text-dim)' }}>
@@ -450,7 +457,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                         </span>
                       )}
                       <span className="text-xs tabular-nums" style={{ color: 'var(--clr-text-subtle)' }}>
-                        {formatDate(msg.date)}
+                        {dateStr} · {timeStr}
                       </span>
                       {isOut && (
                         <span className="text-xs font-semibold" style={{ color: 'var(--clr-text-dim)' }}>
