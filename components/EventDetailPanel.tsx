@@ -405,10 +405,9 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             <button
               onClick={handleSaveDetails}
               disabled={savingDetails}
-              className="w-full btn-gold text-sm py-2 px-4 rounded-lg transition-all"
-              style={{
-                opacity: savingDetails ? 0.7 : 1,
-              }}
+              className="inline-flex items-center gap-1.5 bg-[#88280B] hover:bg-[#a03010]
+                         disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-full
+                         transition-colors text-sm"
             >
               {savingDetails ? 'Bezig…' : 'Opslaan'}
             </button>
