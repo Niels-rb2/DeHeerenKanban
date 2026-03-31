@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { EventDetailPanel } from '@/components/EventDetailPanel';
 
-export default async function PrivateEventPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   // Fetch event data from the API

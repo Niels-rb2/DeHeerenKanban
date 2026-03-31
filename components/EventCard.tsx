@@ -28,7 +28,7 @@ export function EventCard({ event }: EventCardProps) {
     // Prevent drag-drop from intercepting the click
     e.stopPropagation();
     e.preventDefault();
-    router.push(`/private-events/${event.id}`);
+    router.push(`/dashboard/${event.id}`);
   };
 
   return (

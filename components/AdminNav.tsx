@@ -58,9 +58,9 @@ function AdminNavInner() {
   }
 
   const onDashboard = pathname === '/dashboard';
-  const onThread = pathname.startsWith('/thread/') || pathname.startsWith('/private-events/');
+  const onDetailPage = pathname.startsWith('/thread/') || /^\/dashboard\/[\w-]+$/.test(pathname);
 
-  if (onThread) return null;
+  if (onDetailPage) return null;
 
   return (
     <header
@@ -106,8 +106,8 @@ function AdminNavInner() {
         </button>
       )}
 
-      {/* Dark mode toggle — verborgen op thread-pagina's (staat daar in de panel) */}
-      {!onThread && <>
+      {/* Dark mode toggle — verborgen op detail-pagina's (staat daar in de panel) */}
+      {!onDetailPage && <>
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
