@@ -253,9 +253,22 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
           {/* AI Summary text */}
           {event.ai_summary && (
             <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--clr-outline)' }}>
-              <p className="text-xs" style={{ color: 'var(--clr-text-dim)' }}>
-                {event.ai_summary}
-              </p>
+              <ul className="space-y-1.5">
+                {event.ai_summary
+                  .split('\n')
+                  .map(line => line.trim())
+                  .filter(line => line.length > 0)
+                  .map((line, i) => {
+                    // Strip leading bullet chars (•, -, *)
+                    const text = line.replace(/^[•\-\*]\s*/, '');
+                    return (
+                      <li key={i} className="flex items-start gap-2 text-xs" style={{ color: 'var(--clr-text-dim)' }}>
+                        <span className="shrink-0 mt-0.5" style={{ color: 'var(--clr-text-subtle)' }}>•</span>
+                        <span>{text}</span>
+                      </li>
+                    );
+                  })}
+              </ul>
             </div>
           )}
 
@@ -279,9 +292,27 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
         {event.special_notes && (
           <div className="bento-card ml-5 mr-5" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
             <SectionLabel icon={StickyNote} label="Bijzonderheden" />
-            <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
-              {event.special_notes}
-            </p>
+            {event.special_notes.includes('\n') || event.special_notes.includes('•') ? (
+              <ul className="space-y-1.5">
+                {event.special_notes
+                  .split('\n')
+                  .map(line => line.trim())
+                  .filter(line => line.length > 0)
+                  .map((line, i) => {
+                    const text = line.replace(/^[•\-\*]\s*/, '');
+                    return (
+                      <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--clr-text)' }}>
+                        <span className="shrink-0 mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>•</span>
+                        <span>{text}</span>
+                      </li>
+                    );
+                  })}
+              </ul>
+            ) : (
+              <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
+                {event.special_notes}
+              </p>
+            )}
           </div>
         )}
 

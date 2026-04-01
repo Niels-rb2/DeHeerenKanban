@@ -88,12 +88,22 @@ export function EventCard({ event }: EventCardProps) {
 
       {/* AI Summary preview */}
       {event.ai_summary && (
-        <p
-          className="text-xs mt-2 line-clamp-2"
-          style={{ color: 'var(--clr-text-dim)' }}
-        >
-          {event.ai_summary}
-        </p>
+        <div className="mt-2 space-y-0.5">
+          {event.ai_summary
+            .split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 0)
+            .slice(0, 3)
+            .map((line, i) => {
+              const text = line.replace(/^[•\-\*]\s*/, '');
+              return (
+                <p key={i} className="text-xs flex items-start gap-1.5" style={{ color: 'var(--clr-text-dim)' }}>
+                  <span className="shrink-0" style={{ color: 'var(--clr-text-subtle)' }}>•</span>
+                  <span className="line-clamp-1">{text}</span>
+                </p>
+              );
+            })}
+        </div>
       )}
     </div>
   );
