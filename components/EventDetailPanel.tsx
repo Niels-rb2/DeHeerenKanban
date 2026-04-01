@@ -44,8 +44,8 @@ function cleanMessageForDisplay(body: string): string {
     // Stop at "On <date> ... wrote:" (English quote header)
     if (/^On\s+.+wrote:\s*$/i.test(trimmed)) break;
 
-    // Stop at "Verzonden vanuit" / "Verstuurd vanaf" / "Sent from"
-    if (/^(Verzonden vanuit|Verstuurd vanaf|Sent from)\s/i.test(trimmed)) break;
+    // Stop at "Verzonden vanuit/vanaf" / "Verstuurd vanaf" / "Sent from"
+    if (/^(Verzonden\s+vanuit|Verzonden\s+vanaf|Verstuurd\s+vanaf|Sent\s+from)\s/i.test(trimmed)) break;
 
     // Stop at signature markers followed by contact info
     if (/^(Met vriendelijke groet|Mvg|Groet|Groeten|Groetjes|Kind regards|Best regards|Vriendelijke groet|Hartelijke groet|Liefs|Cheers)\s*[,.]?\s*$/i.test(trimmed)) {
@@ -95,37 +95,52 @@ function cleanHtmlForDisplay(html: string): string {
   // Remove <style> blocks
   let cleaned = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
 
-  // Remove signature block: everything from "Met vriendelijke groet" onwards
-  // These patterns match the signature and everything after it (quoted replies, etc.)
+  // ── Strip known signature / quote containers by ID ────────────
+  // Outlook mobile: separator line + signature + forwarded content
+  cleaned = cleaned.replace(/<div[^>]*id="ms-outlook-mobile-body-separator-line"[\s\S]*$/i, '');
+  cleaned = cleaned.replace(/<div[^>]*id="ms-outlook-mobile-signature"[\s\S]*$/i, '');
+  // Outlook desktop: divRplyFwdMsg
+  cleaned = cleaned.replace(/<div[^>]*id="divRplyFwdMsg"[\s\S]*$/i, '');
+  cleaned = cleaned.replace(/<div[^>]*id="appendonsend"[\s\S]*$/i, '');
+  // Outlook separator border
+  cleaned = cleaned.replace(/<div[^>]*style="[^"]*border-top:\s*solid\s+#[A-Fa-f0-9]+[\s\S]*$/i, '');
+  // Bloop (macOS mail client) signature
+  cleaned = cleaned.replace(/<div[^>]*id="bloop_sign_[^"]*"[\s\S]*$/i, '');
+  // Gmail quote blocks
+  cleaned = cleaned.replace(/<div[^>]*class="gmail_quote"[\s\S]*$/i, '');
+  cleaned = cleaned.replace(/<div[^>]*class="gmail_attr"[\s\S]*$/i, '');
+  // Generic blockquote
+  cleaned = cleaned.replace(/<blockquote[\s\S]*$/i, '');
+
+  // ── Strip signature greetings and everything after ────────────
   const sigPatterns = [
-    // Div/paragraph containing signature greeting
     /<div[^>]*>\s*Met vriendelijke groet[\s\S]*$/i,
     /<div[^>]*>\s*Mvg[\s,.][\s\S]*$/i,
     /<div[^>]*>\s*Groet(?:en|jes)?[\s,.][\s\S]*$/i,
     /<div[^>]*>\s*Kind regards[\s\S]*$/i,
-    // Gmail quote blocks
-    /<div\s+class="gmail_quote"[\s\S]*$/i,
-    // Outlook quote blocks
-    /<div\s+id="appendonsend"[\s\S]*$/i,
-    /<div\s+style="border:none;border-top:solid\s+#[A-F0-9]+[\s\S]*$/i,
-    // Blockquote (generic quote marker)
-    /<blockquote[\s\S]*$/i,
+    /<div[^>]*>\s*Vriendelijke groet[\s\S]*$/i,
+    /<div[^>]*>\s*Hartelijke groet[\s\S]*$/i,
+    // "Verzonden vanaf Outlook" / "Sent from" as plain text in a div
+    /<div[^>]*>\s*Verzonden\s+(?:vanaf|vanuit)[\s\S]*$/i,
+    /<div[^>]*>\s*Sent\s+from[\s\S]*$/i,
+    // "Op <date> bij/om ... schreef:" (Dutch quote intro)
+    /<div[^>]*>\s*Op\s+\d{1,2}\s+\w+\s+\d{4}\s+(?:bij|om)[\s\S]*$/i,
   ];
 
   for (const pattern of sigPatterns) {
     cleaned = cleaned.replace(pattern, '');
   }
 
-  // Remove inline font-family/font-size styles but keep meaningful ones (bold, etc.)
+  // ── Clean up styles ───────────────────────────────────────────
+  // Remove inline font-family/font-size styles but keep bold/italic
   cleaned = cleaned.replace(/\s*style="[^"]*?font-family:[^"]*?"/gi, (match) => {
-    // Keep bold/italic if present in the style
     if (/font-weight:\s*bold/i.test(match) || /font-style:\s*italic/i.test(match)) {
       return match;
     }
     return '';
   });
 
-  // Remove Bloop custom font div IDs (clean up clutter)
+  // Remove clutter IDs
   cleaned = cleaned.replace(/\s*id="bloop_customfont"/gi, '');
   cleaned = cleaned.replace(/\s*id="docs-internal-guid-[^"]*"/gi, '');
 
@@ -154,17 +169,32 @@ function plainTextToHtml(text: string): string {
 }
 
 /**
- * Get clean HTML for a message, preferring formatted HTML when available.
+ * Get clean HTML for a message.
+ * For outbound (café) messages: prefer HTML for rich formatting.
+ * For inbound (customer) messages: prefer plain text (cleaner to strip quotes).
+ * If only one format is available, use that.
  */
-function getMessageHtml(msg: { body_plain: string | null; body_html: string | null; snippet: string }): string {
-  // Prefer HTML for richer formatting
-  if (msg.body_html) {
-    return cleanHtmlForDisplay(msg.body_html);
+function getMessageHtml(msg: { body_plain: string | null; body_html: string | null; snippet: string; direction?: string }): string {
+  const hasPlain = !!msg.body_plain;
+  const hasHtml = !!msg.body_html;
+  const isOutbound = msg.direction === 'OUTBOUND';
+
+  // Outbound: prefer HTML (has bold, paragraphs, structure)
+  if (isOutbound && hasHtml) {
+    return cleanHtmlForDisplay(msg.body_html!);
   }
 
-  // Fall back to plain text → HTML
-  const text = msg.body_plain || msg.snippet || '';
-  return plainTextToHtml(text);
+  // Inbound: prefer plain text (easier to strip Outlook/Gmail quoted content)
+  if (hasPlain) {
+    return plainTextToHtml(msg.body_plain!);
+  }
+
+  // Fallback: use whatever is available
+  if (hasHtml) {
+    return cleanHtmlForDisplay(msg.body_html!);
+  }
+
+  return plainTextToHtml(msg.snippet || '');
 }
 
 const STATUS_OPTIONS: ThreadStatus[] = [
