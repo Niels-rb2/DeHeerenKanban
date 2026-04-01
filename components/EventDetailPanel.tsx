@@ -145,11 +145,23 @@ function cleanHtmlForDisplay(html: string): string {
   cleaned = cleaned.replace(/\s*id="docs-internal-guid-[^"]*"/gi, '');
 
   // Sanitize with DOMPurify - allow basic formatting tags
-  const sanitized = DOMPurify.sanitize(cleaned, {
+  let sanitized = DOMPurify.sanitize(cleaned, {
     ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'div', 'span', 'h1', 'h2', 'h3', 'a'],
     ALLOWED_ATTR: ['href', 'target'],
     ADD_ATTR: ['target'],
   });
+
+  // ── Collapse whitespace ──────────────────────────────────────
+  // Remove empty tags: <p></p>, <div></div>, <span></span>, etc.
+  sanitized = sanitized.replace(/<(p|div|span|h[1-3])[^>]*>\s*<\/\1>/gi, '');
+  // Remove tags that only contain <br> or &nbsp;
+  sanitized = sanitized.replace(/<(p|div|span)[^>]*>\s*(?:<br\s*\/?>|\s|&nbsp;)*\s*<\/\1>/gi, '');
+  // Collapse 3+ consecutive <br> into max 2
+  sanitized = sanitized.replace(/(<br\s*\/?\s*>[\s]*){3,}/gi, '<br><br>');
+  // Remove leading <br> tags
+  sanitized = sanitized.replace(/^(\s*<br\s*\/?\s*>\s*)+/i, '');
+  // Remove trailing <br> tags
+  sanitized = sanitized.replace(/(\s*<br\s*\/?\s*>\s*)+$/i, '');
 
   // Add target="_blank" to all links
   return sanitized.replace(/<a\s/gi, '<a target="_blank" rel="noopener noreferrer" ');
@@ -165,6 +177,7 @@ function plainTextToHtml(text: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+    .replace(/\n{3,}/g, '\n\n')   // Collapse 3+ newlines to max 2
     .replace(/\n/g, '<br>');
 }
 
