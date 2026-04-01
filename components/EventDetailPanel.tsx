@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import DOMPurify from 'dompurify';
+import * as DOMPurifyModule from 'dompurify';
+const DOMPurify = DOMPurifyModule.default || DOMPurifyModule;
 import { PrivateEventRequest, ThreadStatus, Message } from '@/lib/types';
 import { formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
 import {
