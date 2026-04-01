@@ -290,7 +290,7 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                   </button>
                   <button
                     onClick={() => { setClosedTab('ARCHIVE'); setExpanded(false); }}
-                    className={`py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap border ${
+                    className={`flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap border ${
                       closedTab === 'ARCHIVE'
                         ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700/40'
                         : 'border-transparent text-[var(--clr-text-muted)]'
