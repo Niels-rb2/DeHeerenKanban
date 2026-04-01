@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PrivateEventRequest, ThreadStatus } from '@/lib/types';
 import { StatsBar } from '@/components/StatsBar';
@@ -16,16 +16,70 @@ function getGreeting(): string {
   return 'Goedenavond';
 }
 
+// ─── Date search helpers ─────────────────────────────────────────────────────
+
+const MONTH_NAMES = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const MONTH_SHORT = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+function dateMatchesSearch(eventDate: string | null, query: string): boolean {
+  if (!eventDate) return false;
+  const d = new Date(eventDate + 'T00:00:00');
+  if (isNaN(d.getTime())) return false;
+  const day = d.getDate();
+  const month = d.getMonth();
+  const year = d.getFullYear();
+  const variants = [
+    eventDate,
+    `${day} ${MONTH_NAMES[month]} ${year}`,
+    `${day} ${MONTH_SHORT[month]} ${year}`,
+    `${day} ${MONTH_NAMES[month]}`,
+    `${day} ${MONTH_SHORT[month]}`,
+    `${MONTH_NAMES[month]} ${year}`,
+    `${MONTH_SHORT[month]} ${year}`,
+    `${MONTH_NAMES[month]}`,
+    `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`,
+    `${day}-${month + 1}-${year}`,
+  ];
+  return variants.some(v => v.toLowerCase().includes(query));
+}
+
+function filterEvents(
+  allEvents: Record<ThreadStatus, PrivateEventRequest[]>,
+  query: string,
+): Record<ThreadStatus, PrivateEventRequest[]> {
+  if (!query) return allEvents;
+
+  const s = query.toLowerCase().trim();
+  const filtered: Record<ThreadStatus, PrivateEventRequest[]> = {} as Record<ThreadStatus, PrivateEventRequest[]>;
+
+  for (const [status, items] of Object.entries(allEvents)) {
+    filtered[status as ThreadStatus] = (items as PrivateEventRequest[]).filter(e =>
+      e.sender_name?.toLowerCase().includes(s) ||
+      e.sender_email?.toLowerCase().includes(s) ||
+      e.occasion_type?.toLowerCase().includes(s) ||
+      dateMatchesSearch(e.event_date, s)
+    );
+  }
+  return filtered;
+}
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const search = searchParams.get('q') ?? '';
 
-  const [events, setEvents] = useState<Record<ThreadStatus, PrivateEventRequest[]> | null>(null);
+  const [allEvents, setAllEvents] = useState<Record<ThreadStatus, PrivateEventRequest[]> | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Filtered events, recalculated instantly when search or allEvents changes
+  const events = useMemo(() => {
+    if (!allEvents) return null;
+    return filterEvents(allEvents, search);
+  }, [allEvents, search]);
 
   const fetchEvents = useCallback(async () => {
     if (isDemo) {
-      // Demo mode: create dummy data
       const dummyEvents: Record<ThreadStatus, PrivateEventRequest[]> = {
         TO_ANSWER: [
           {
@@ -88,7 +142,7 @@ function DashboardContent() {
         NO_GO: [],
         ARCHIVE: [],
       };
-      setEvents(dummyEvents);
+      setAllEvents(dummyEvents);
       setLoading(false);
       return;
     }
@@ -97,58 +151,14 @@ function DashboardContent() {
       const response = await fetch('/api/private-events');
       if (!response.ok) throw new Error('Failed to fetch events');
       const data = await response.json();
-
-      // Filter by search if needed
-      if (search) {
-        const s = search.toLowerCase().trim();
-        const filtered: Record<ThreadStatus, PrivateEventRequest[]> = {};
-
-        // Format event_date for matching: "30 mei 2026", "mei 2026", "2026-05-30" etc.
-        const monthNames = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-        const monthShort = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-
-        function dateMatchesSearch(eventDate: string | null, query: string): boolean {
-          if (!eventDate) return false;
-          const d = new Date(eventDate + 'T00:00:00');
-          if (isNaN(d.getTime())) return false;
-          const day = d.getDate();
-          const month = d.getMonth();
-          const year = d.getFullYear();
-          // Match various date representations
-          const variants = [
-            eventDate,                                    // 2026-05-30
-            `${day} ${monthNames[month]} ${year}`,        // 30 mei 2026
-            `${day} ${monthShort[month]} ${year}`,        // 30 mei 2026
-            `${day} ${monthNames[month]}`,                // 30 mei
-            `${day} ${monthShort[month]}`,                // 30 mei
-            `${monthNames[month]} ${year}`,               // mei 2026
-            `${monthShort[month]} ${year}`,               // mei 2026
-            `${monthNames[month]}`,                       // mei
-            `${String(day).padStart(2,'0')}-${String(month+1).padStart(2,'0')}-${year}`, // 30-05-2026
-            `${day}-${month+1}-${year}`,                  // 30-5-2026
-          ];
-          return variants.some(v => v.toLowerCase().includes(query));
-        }
-
-        for (const [status, items] of Object.entries(data.data)) {
-          filtered[status as ThreadStatus] = (items as PrivateEventRequest[]).filter(e =>
-            e.sender_name?.toLowerCase().includes(s) ||
-            e.sender_email?.toLowerCase().includes(s) ||
-            e.occasion_type?.toLowerCase().includes(s) ||
-            dateMatchesSearch(e.event_date, s)
-          );
-        }
-        setEvents(filtered);
-      } else {
-        setEvents(data.data);
-      }
+      setAllEvents(data.data);
     } catch (error) {
       console.error('Error fetching events:', error);
       toast.error('Kon aanvragen niet laden');
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, []);
 
   useEffect(() => {
     fetchEvents();
