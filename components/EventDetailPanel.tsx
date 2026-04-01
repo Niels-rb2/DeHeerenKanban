@@ -507,45 +507,64 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
         <div className="bento-card ml-5 mr-5" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
           <SectionLabel icon={Calendar} label="Details" />
           <div className="space-y-3">
-            {/* Datum feestje */}
-            <Field label="Datum feestje">
-              <input
-                type="date"
-                value={eventDate ? eventDate.split('T')[0] : ''}
-                onChange={(e) => setEventDate(e.target.value ? new Date(e.target.value).toISOString() : '')}
-                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
-                style={{
-                  background: 'var(--clr-input)',
-                  borderColor: 'var(--clr-input-border)',
-                  color: 'var(--clr-text)',
-                }}
-              />
-            </Field>
+            {/* Datum feestje | Reden feestje | Aantal personen */}
+            <div className="grid grid-cols-3 gap-2">
+              <Field label="Datum feestje">
+                <input
+                  type="date"
+                  value={eventDate ? eventDate.split('T')[0] : ''}
+                  onChange={(e) => setEventDate(e.target.value ? new Date(e.target.value).toISOString() : '')}
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                  style={{
+                    background: 'var(--clr-input)',
+                    borderColor: 'var(--clr-input-border)',
+                    color: 'var(--clr-text)',
+                  }}
+                />
+              </Field>
 
-            {/* Reden feestje (occasion) */}
-            <Field label="Reden feestje">
-              <select
-                value={occasionType}
-                onChange={(e) => setOccasionType(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
-                style={{
-                  background: 'var(--clr-input)',
-                  borderColor: 'var(--clr-input-border)',
-                  color: 'var(--clr-text)',
-                }}
-              >
-                <option value="">-- Selecteer gelegenheid --</option>
-                <option value="verjaardag">🎂 Verjaardag</option>
-                <option value="receptie">🥂 Receptie</option>
-                <option value="borrel">🍺 Borrel</option>
-                <option value="diner">🍽️ Diner</option>
-                <option value="trouwerij">💍 Trouwerij</option>
-                <option value="bruiloft">💍 Bruiloft</option>
-                <option value="jubileum">🎉 Jubileum</option>
-                <option value="bedrijfsfeest">🎉 Bedrijfsfeest</option>
-                <option value="anders">🎉 Anders</option>
-              </select>
-            </Field>
+              <Field label="Reden feestje">
+                <div className="relative">
+                  <select
+                    value={occasionType}
+                    onChange={(e) => setOccasionType(e.target.value)}
+                    className="w-full px-3 py-2 pr-8 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
+                    style={{
+                      background: 'var(--clr-input)',
+                      borderColor: 'var(--clr-input-border)',
+                      color: 'var(--clr-text)',
+                    }}
+                  >
+                    <option value="">-- Selecteer --</option>
+                    <option value="verjaardag">🎂 Verjaardag</option>
+                    <option value="receptie">🥂 Receptie</option>
+                    <option value="borrel">🍺 Borrel</option>
+                    <option value="diner">🍽️ Diner</option>
+                    <option value="trouwerij">💍 Trouwerij</option>
+                    <option value="bruiloft">💍 Bruiloft</option>
+                    <option value="jubileum">🎉 Jubileum</option>
+                    <option value="bedrijfsfeest">🎉 Bedrijfsfeest</option>
+                    <option value="anders">🎉 Anders</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: 'var(--clr-text-muted)' }} />
+                </div>
+              </Field>
+
+              <Field label="Aantal personen">
+                <input
+                  type="number"
+                  value={guestCount}
+                  onChange={(e) => setGuestCount(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                  style={{
+                    background: 'var(--clr-input)',
+                    borderColor: 'var(--clr-input-border)',
+                    color: 'var(--clr-text)',
+                  }}
+                />
+              </Field>
+            </div>
 
             {/* Begintijd - Eindtijd */}
             <div className="grid grid-cols-2 gap-2">
@@ -557,7 +576,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
                   style={{
                     background: 'var(--clr-input)',
-                    borderColor: 'var(--clr-outline)',
+                    borderColor: 'var(--clr-input-border)',
                     color: 'var(--clr-text)',
                   }}
                 />
@@ -570,27 +589,12 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
                   style={{
                     background: 'var(--clr-input)',
-                    borderColor: 'var(--clr-outline)',
+                    borderColor: 'var(--clr-input-border)',
                     color: 'var(--clr-text)',
                   }}
                 />
               </Field>
             </div>
-
-            {/* Aantal personen */}
-            <Field label="Aantal personen">
-              <input
-                type="number"
-                value={guestCount}
-                onChange={(e) => setGuestCount(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
-                style={{
-                  background: 'var(--clr-input)',
-                  borderColor: 'var(--clr-input-border)',
-                  color: 'var(--clr-text)',
-                }}
-              />
-            </Field>
 
             {/* Bijzonderheden */}
             <Field label="Bijzonderheden">
