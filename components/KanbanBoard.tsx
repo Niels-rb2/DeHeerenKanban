@@ -266,24 +266,24 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
 
                 {/* Tab toggle */}
                 <div
-                  className="flex rounded-lg p-0.5 gap-0.5"
+                  className="flex rounded-lg p-1 gap-1"
                   style={{ background: 'var(--clr-surface)' }}
                 >
                   <button
                     onClick={() => { setClosedTab('NO_GO'); setExpanded(false); }}
-                    className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all cursor-pointer text-center"
+                    className="flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center"
                     style={{
-                      background: closedTab === 'NO_GO' ? 'var(--clr-bg)' : 'transparent',
-                      color: closedTab === 'NO_GO' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
-                      boxShadow: closedTab === 'NO_GO' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                      background: closedTab === 'NO_GO' ? '#fef2f2' : 'transparent',
+                      color: closedTab === 'NO_GO' ? '#dc2626' : 'var(--clr-text-muted)',
+                      border: closedTab === 'NO_GO' ? '1.5px solid #fca5a5' : '1.5px solid transparent',
                     }}
                   >
                     Gaat niet door
                     <span
-                      className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                      className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold"
                       style={{
-                        background: closedTab === 'NO_GO' ? '#dc26261a' : 'transparent',
-                        color: closedTab === 'NO_GO' ? '#dc2626' : 'var(--clr-text-subtle)',
+                        background: closedTab === 'NO_GO' ? '#dc2626' : 'var(--clr-surface-low)',
+                        color: closedTab === 'NO_GO' ? '#fff' : 'var(--clr-text-subtle)',
                       }}
                     >
                       {noGoCount}
@@ -291,19 +291,19 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                   </button>
                   <button
                     onClick={() => { setClosedTab('ARCHIVE'); setExpanded(false); }}
-                    className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all cursor-pointer text-center"
+                    className="flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center"
                     style={{
-                      background: closedTab === 'ARCHIVE' ? 'var(--clr-bg)' : 'transparent',
-                      color: closedTab === 'ARCHIVE' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
-                      boxShadow: closedTab === 'ARCHIVE' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                      background: closedTab === 'ARCHIVE' ? '#f3f4f6' : 'transparent',
+                      color: closedTab === 'ARCHIVE' ? '#4b5563' : 'var(--clr-text-muted)',
+                      border: closedTab === 'ARCHIVE' ? '1.5px solid #d1d5db' : '1.5px solid transparent',
                     }}
                   >
                     Archief
                     <span
-                      className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                      className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold"
                       style={{
-                        background: closedTab === 'ARCHIVE' ? '#9ca3af1a' : 'transparent',
-                        color: closedTab === 'ARCHIVE' ? '#6b7280' : 'var(--clr-text-subtle)',
+                        background: closedTab === 'ARCHIVE' ? '#6b7280' : 'var(--clr-surface-low)',
+                        color: closedTab === 'ARCHIVE' ? '#fff' : 'var(--clr-text-subtle)',
                       }}
                     >
                       {archiveCount}
