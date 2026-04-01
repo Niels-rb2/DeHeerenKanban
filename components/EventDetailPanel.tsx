@@ -672,7 +672,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
               onClick={() => setNewestFirst(true)}
               className="flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-all cursor-pointer text-center"
               style={{
-                background: newestFirst ? 'var(--clr-bg)' : 'transparent',
+                background: newestFirst ? 'var(--clr-surface)' : 'transparent',
                 color: newestFirst ? 'var(--clr-text)' : 'var(--clr-text-muted)',
                 boxShadow: newestFirst ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}
@@ -683,7 +683,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
               onClick={() => setNewestFirst(false)}
               className="flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-all cursor-pointer text-center"
               style={{
-                background: !newestFirst ? 'var(--clr-bg)' : 'transparent',
+                background: !newestFirst ? 'var(--clr-surface)' : 'transparent',
                 color: !newestFirst ? 'var(--clr-text)' : 'var(--clr-text-muted)',
                 boxShadow: !newestFirst ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}
