@@ -3,12 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { RefreshCw, Settings, Moon, Sun, Search, X } from 'lucide-react';
+import { RefreshCw, Settings, Moon, Sun, Search, X, LogOut } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useSearch } from '@/lib/search-context';
-
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 function AdminNavInner() {
@@ -129,6 +128,17 @@ function AdminNavInner() {
         >
           <Settings size={15} />
         </Link>
+        <a
+          href="/api/auth/logout"
+          className="w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+          style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+          aria-label="Uitloggen"
+          title="Uitloggen"
+        >
+          <LogOut size={15} />
+        </a>
       </>}
     </header>
   );
