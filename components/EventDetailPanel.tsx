@@ -261,6 +261,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   const [guestCount, setGuestCount] = useState(event.guest_count?.toString() || '');
   const [specialNotes, setSpecialNotes] = useState(event.special_notes || '');
   const [savingDetails, setSavingDetails] = useState(false);
+  const [newestFirst, setNewestFirst] = useState(true);
 
   async function handleReanalyze() {
     setReanalyzing(true);
@@ -644,7 +645,38 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
           </span>
         </div>
 
-        {/* Messages — nieuwste bovenaan */}
+        {/* Sort toggle */}
+        {messages.length > 1 && (
+          <div
+            className="flex rounded-lg p-1 gap-1 mb-4"
+            style={{ background: 'var(--clr-surface-low)' }}
+          >
+            <button
+              onClick={() => setNewestFirst(true)}
+              className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all cursor-pointer text-center"
+              style={{
+                background: newestFirst ? 'var(--clr-bg)' : 'transparent',
+                color: newestFirst ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+                boxShadow: newestFirst ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              }}
+            >
+              Nieuwste eerst
+            </button>
+            <button
+              onClick={() => setNewestFirst(false)}
+              className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all cursor-pointer text-center"
+              style={{
+                background: !newestFirst ? 'var(--clr-bg)' : 'transparent',
+                color: !newestFirst ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+                boxShadow: !newestFirst ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              }}
+            >
+              Oudste eerst
+            </button>
+          </div>
+        )}
+
+        {/* Messages */}
         <div className="flex-1 space-y-4 pr-1">
           {messages.length === 0 ? (
             <div
@@ -654,7 +686,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
               Geen berichten geladen
             </div>
           ) : (
-            [...messages].reverse().map((msg) => {
+            (newestFirst ? [...messages].reverse() : [...messages]).map((msg) => {
               const isOut = msg.direction === 'OUTBOUND';
               const msgDate = new Date(msg.date);
               const dateStr = msgDate.toLocaleDateString('nl-NL', {
