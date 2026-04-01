@@ -261,7 +261,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   const [guestCount, setGuestCount] = useState(event.guest_count?.toString() || '');
   const [specialNotes, setSpecialNotes] = useState(event.special_notes || '');
   const [savingDetails, setSavingDetails] = useState(false);
-  const [newestFirst, setNewestFirst] = useState(true);
+  const [newestFirst, setNewestFirst] = useState(false);
 
   async function handleReanalyze() {
     setReanalyzing(true);
