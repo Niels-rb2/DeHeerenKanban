@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Geist_Mono } from 'next/font/google';
-import { Toaster } from 'sonner';
 import { AdminNav } from '@/components/AdminNav';
+import { ClientToaster } from '@/components/ClientToaster';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SearchProvider } from '@/lib/search-context';
 import './globals.css';
@@ -54,7 +54,7 @@ export default function RootLayout({
               {children}
             </main>
 
-            <Toaster richColors closeButton position="bottom-right" />
+            <ClientToaster />
           </SearchProvider>
         </ThemeProvider>
       </body>
