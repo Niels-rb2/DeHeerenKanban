@@ -12,7 +12,7 @@ import {
 import Image from 'next/image';
 import { DatePickerInput } from './DatePickerInput';
 import { toast } from 'sonner';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ThemeProvider';
 import Link from 'next/link';
 
 const STATUS_OPTIONS: ThreadStatus[] = [

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { RefreshCw, Settings, Moon, Sun, Search, X, LogOut } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ThemeProvider';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useSearch } from '@/lib/search-context';
