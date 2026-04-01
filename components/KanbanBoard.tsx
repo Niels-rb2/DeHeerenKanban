@@ -56,10 +56,19 @@ interface KanbanBoardProps {
   events: Record<ThreadStatus, PrivateEventRequest[]>;
 }
 
+const COLLAPSED_LIMIT = 3;
+const COLLAPSIBLE_COLUMNS: ThreadStatus[] = ['NO_GO', 'ARCHIVE'];
+
 export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
   const [events, setEvents] = useState(initialEvents);
+  const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
 
   const byStatus = (status: ThreadStatus) => events[status] || [];
+
+  const isCollapsible = (status: ThreadStatus) => COLLAPSIBLE_COLUMNS.includes(status);
+  const isExpanded = (status: ThreadStatus) => expandedColumns[status] ?? false;
+  const toggleExpanded = (status: ThreadStatus) =>
+    setExpandedColumns(prev => ({ ...prev, [status]: !prev[status] }));
 
   async function onDragEnd(result: DropResult) {
     const { source, destination, draggableId } = result;
@@ -172,30 +181,59 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                     >
                       {snapshot.isDraggingOver ? 'Loslaten om te verplaatsen' : 'Geen verzoeken'}
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {colEvents.map((event, index) => (
-                        <Draggable key={event.id} draggableId={event.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="transition-all duration-150"
-                              style={{
-                                opacity: snapshot.isDragging ? 0.5 : 1,
-                                transform: snapshot.isDragging ? 'rotate(2deg)' : 'rotate(0deg)',
-                                ...provided.draggableProps.style,
-                              }}
-                            >
-                              <EventCard event={event} />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
+                  ) : (() => {
+                    const collapsible = isCollapsible(col.status);
+                    const expanded = isExpanded(col.status);
+                    const shouldCollapse = collapsible && colEvents.length > COLLAPSED_LIMIT && !expanded;
+                    const visibleEvents = shouldCollapse ? colEvents.slice(0, COLLAPSED_LIMIT) : colEvents;
+                    const hiddenCount = colEvents.length - COLLAPSED_LIMIT;
+
+                    return (
+                      <div className="flex flex-col gap-2">
+                        {visibleEvents.map((event, index) => (
+                          <Draggable key={event.id} draggableId={event.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="transition-all duration-150"
+                                style={{
+                                  opacity: snapshot.isDragging ? 0.5 : 1,
+                                  transform: snapshot.isDragging ? 'rotate(2deg)' : 'rotate(0deg)',
+                                  ...provided.draggableProps.style,
+                                }}
+                              >
+                                <EventCard event={event} />
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                        {collapsible && colEvents.length > COLLAPSED_LIMIT && (
+                          <button
+                            onClick={() => toggleExpanded(col.status)}
+                            className="w-full py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer"
+                            style={{
+                              color: col.borderColor,
+                              background: 'var(--clr-surface)',
+                              border: `1px dashed ${col.borderColor}40`,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = `${col.borderColor}10`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'var(--clr-surface)';
+                            }}
+                          >
+                            {expanded
+                              ? '↑ Lees minder'
+                              : `↓ Lees meer (${hiddenCount} meer)`}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </Droppable>

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { extractEventDataFromEmail } from '@/lib/anthropic';
+import { extractEventDataFromThread } from '@/lib/anthropic';
 
 export async function POST(
   request: Request,
@@ -19,29 +19,43 @@ export async function POST(
       return Response.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Get the first inbound message
+    // Get ALL messages for the thread (not just first inbound)
     const { data: messages, error: messagesError } = await supabaseAdmin
       .from('messages')
-      .select('*')
-      .eq('thread_id', event.gmail_thread_id)
-      .eq('direction', 'INBOUND')
-      .order('date', { ascending: true })
-      .limit(1);
+      .select('direction, from_name, from_email, date, body_plain, body_html, snippet')
+      .eq('thread_id', event.id)
+      .order('date', { ascending: true });
 
     if (messagesError || !messages || messages.length === 0) {
       return Response.json({ error: 'No messages found' }, { status: 404 });
     }
 
-    const firstMessage = messages[0];
-
-    // Re-extract data
     try {
-      const extracted = await extractEventDataFromEmail(firstMessage.body_plain || firstMessage.snippet || '');
+      const today = new Date().toISOString().split('T')[0];
+      const extracted = await extractEventDataFromThread(messages, today);
 
-      // Update event with new extracted data
+      // Determine final status
+      let finalStatus = extracted.statusHint || 'TO_ANSWER';
+      const validStatuses = ['TO_ANSWER', 'ANSWERED', 'CONSULTATION_PLANNED', 'GO', 'NO_GO', 'ARCHIVE'];
+      if (!validStatuses.includes(finalStatus)) finalStatus = 'TO_ANSWER';
+
+      // Auto-archive if event date is in the past
+      if (extracted.eventDate && extracted.eventDate < today) {
+        finalStatus = 'ARCHIVE';
+      }
+
+      // Determine sender_email (prefer real customer email)
+      const ignoredEmails = ['noreply@framer.com', 'notifications@forms.elfsightmail.com', 'info@cafedeheeren.nl'];
+      let senderEmail = event.sender_email;
+      if (extracted.senderEmail && !ignoredEmails.includes(extracted.senderEmail.toLowerCase())) {
+        senderEmail = extracted.senderEmail;
+      }
+
       const { data, error } = await supabaseAdmin
         .from('private_event_requests')
         .update({
+          sender_name: extracted.senderName || event.sender_name,
+          sender_email: senderEmail,
           occasion_type: extracted.occasionType,
           event_date: extracted.eventDate,
           start_time: extracted.startTime,
@@ -49,6 +63,8 @@ export async function POST(
           guest_count: extracted.guestCount,
           special_notes: extracted.specialNotes,
           ai_summary: extracted.aiSummary,
+          status: finalStatus,
+          archived_at: finalStatus === 'ARCHIVE' ? new Date().toISOString() : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)

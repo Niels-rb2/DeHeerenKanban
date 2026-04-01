@@ -443,8 +443,8 @@ export async function GET(
     const { data: messages, error: messagesError } = await supabaseAdmin
       .from('messages')
       .select('*')
-      .eq('thread_id', event.gmail_thread_id)
-      .order('date', { ascending: true }); // UI reverses to show newest first
+      .eq('thread_id', event.id)
+      .order('date', { ascending: false });
 
     if (messagesError) {
       console.error('Error fetching messages:', messagesError);

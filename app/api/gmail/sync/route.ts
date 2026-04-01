@@ -3,13 +3,66 @@ import { auth } from '@/lib/auth';
 import { getGmailClient, extractEmailBody, parseEmailAddress, CAFE_EMAIL, GMAIL_LABEL } from '@/lib/gmail';
 import { supabaseAdmin } from '@/lib/supabase';
 import { extractEventDataFromEmail } from '@/lib/anthropic';
-import { ThreadStatus, PrivateEventRequest } from '@/lib/types';
+import { ThreadStatus } from '@/lib/types';
+
+const FRAMER_EMAIL = 'noreply@framer.com';
+
+/**
+ * Parse a Framer form notification email.
+ * Extracts customer name, email, phone, and request text from HTML body.
+ * Uses regex to handle cases where fields run together without clean line breaks.
+ */
+function parseFramerNotification(html: string): {
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  request: string | null;
+} {
+  // Strip HTML tags, decode entities, clean up
+  const text = html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(p|div|tr|td|th|li|h[1-6])[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#\d+;/g, '')
+    .replace(/[\u200B\u00AD\u034F\u2007\u200C\u200D\uFEFF]/g, '')
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n\s*\n/g, '\n')
+    .trim();
+
+  // Extract fields using regex patterns that match "Label: Value" or "Label\nValue"
+  const emailMatch = text.match(/E-?mailadres[:\s]+([^\s,]+@[^\s,]+)/i);
+  const firstNameMatch = text.match(/Voornaam[:\s]+([A-Za-zÀ-ÿ\-\.]+)/i);
+  const lastNameMatch = text.match(/Achternaam[:\s]+([A-Za-zÀ-ÿ\s\-\.]+?)(?=\s*(?:E-?mailadres|Telefoonnummer|Beschrijf|$))/i);
+  const phoneMatch = text.match(/Telefoonnummer[:\s]+([\d\s\+\-()]{8,})/i);
+  const requestMatch = text.match(/Beschrijf[^:]*:[:\s]+([\s\S]+?)(?=This email is a submission|support@framer\.com|Not expecting this|$)/i);
+
+  const firstName = firstNameMatch?.[1]?.trim() || null;
+  const lastName = lastNameMatch?.[1]?.trim() || null;
+  const email = emailMatch?.[1]?.trim() || null;
+  const phone = phoneMatch?.[1]?.trim() || null;
+  const request = requestMatch?.[1]?.trim() || null;
+
+  return { firstName, lastName, email, phone, request };
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.accessToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // Parse options from request body (optional)
+  let skipAI = false;
+  try {
+    const body = await req.json().catch(() => ({}));
+    skipAI = body.skipAI === true;
+  } catch {}
 
   try {
     const gmail = getGmailClient(session.accessToken);
@@ -32,143 +85,212 @@ export async function POST(req: NextRequest) {
 
     const gmailThreads = threadsRes.data.threads || [];
     let synced = 0;
+    const errors: string[] = [];
+    const skipped: string[] = [];
 
     for (const gmailThread of gmailThreads) {
-      // Check if already synced
-      const { data: existing } = await supabaseAdmin
-        .from('private_event_requests')
-        .select('id, gmail_thread_id')
-        .eq('gmail_thread_id', gmailThread.id!)
-        .single();
+      try {
+        // Check if already synced
+        const { data: existing } = await supabaseAdmin
+          .from('private_event_requests')
+          .select('id, gmail_thread_id')
+          .eq('gmail_thread_id', gmailThread.id!)
+          .maybeSingle();
 
-      // Fetch full thread from Gmail
-      const threadDetail = await gmail.users.threads.get({
-        userId: 'me',
-        id: gmailThread.id!,
-        format: 'full',
-      });
+        // Fetch full thread from Gmail
+        const threadDetail = await gmail.users.threads.get({
+          userId: 'me',
+          id: gmailThread.id!,
+          format: 'full',
+        });
 
-      const messages = threadDetail.data.messages || [];
-      if (messages.length === 0) continue;
+        const messages = threadDetail.data.messages || [];
+        if (messages.length === 0) { skipped.push(`${gmailThread.id}: no messages`); continue; }
 
-      // Parse all messages from Gmail
-      const parsedMessages = messages.map(msg => {
-        const headers = msg.payload?.headers || [];
-        const getHeader = (name: string) => headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value || '';
+        // Parse all messages from Gmail
+        const parsedMessages = messages.map(msg => {
+          const headers = msg.payload?.headers || [];
+          const getHeader = (name: string) =>
+            headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value || '';
 
-        const fromHeader = getHeader('from');
-        const { name: fromName, email: fromEmail } = parseEmailAddress(fromHeader);
-        const toHeader = getHeader('to');
-        const toEmails = toHeader.split(',').map(e => parseEmailAddress(e.trim()).email);
-        const date = new Date(parseInt(msg.internalDate || '0')).toISOString();
-        const { plain, html } = extractEmailBody(msg.payload);
+          const fromHeader = getHeader('from');
+          const { name: fromName, email: fromEmail } = parseEmailAddress(fromHeader);
+          const toHeader = getHeader('to');
+          const toEmails = toHeader.split(',').map(e => parseEmailAddress(e.trim()).email);
+          const date = new Date(parseInt(msg.internalDate || '0')).toISOString();
+          const { plain, html } = extractEmailBody(msg.payload);
 
-        return {
-          gmail_message_id: msg.id!,
-          from_name: fromName,
-          from_email: fromEmail,
-          to_emails: toEmails,
-          date,
-          snippet: msg.snippet || '',
-          body_plain: plain,
-          body_html: html,
-          direction: (fromEmail.toLowerCase() === CAFE_EMAIL.toLowerCase() ? 'OUTBOUND' : 'INBOUND') as 'INBOUND' | 'OUTBOUND',
-        };
-      });
+          const isOutbound = fromEmail.toLowerCase() === CAFE_EMAIL.toLowerCase();
+          const isFramer = fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase();
 
-      if (existing) {
-        // ── Re-sync: insert only NEW messages for existing thread ──
-        const { data: existingMessages } = await supabaseAdmin
-          .from('messages')
-          .select('gmail_message_id')
-          .eq('thread_id', existing.id);
+          return {
+            gmail_message_id: msg.id!,
+            from_name: fromName,
+            from_email: fromEmail,
+            to_emails: toEmails,
+            date,
+            snippet: msg.snippet || '',
+            body_plain: plain,
+            body_html: html,
+            // Framer notifications count as INBOUND (they represent customer submissions)
+            direction: (isOutbound ? 'OUTBOUND' : 'INBOUND') as 'INBOUND' | 'OUTBOUND',
+            _isFramer: isFramer,
+          };
+        });
 
-        const existingIds = new Set((existingMessages || []).map(m => m.gmail_message_id));
-        const newMessages = parsedMessages.filter(m => !existingIds.has(m.gmail_message_id));
+        if (existing) {
+          // ── Re-sync: insert only NEW messages for existing thread ──
+          const { data: existingMessages } = await supabaseAdmin
+            .from('messages')
+            .select('gmail_message_id')
+            .eq('thread_id', existing.id);
 
-        if (newMessages.length > 0) {
-          for (const msg of newMessages) {
-            await supabaseAdmin.from('messages').insert({
-              thread_id: existing.id,
-              ...msg,
-            });
+          const existingIds = new Set((existingMessages || []).map(m => m.gmail_message_id));
+          const newMessages = parsedMessages.filter(m => !existingIds.has(m.gmail_message_id));
+
+          if (newMessages.length > 0) {
+            for (const msg of newMessages) {
+              const { _isFramer, ...msgData } = msg;
+              await supabaseAdmin.from('messages').insert({
+                thread_id: existing.id,
+                ...msgData,
+              });
+            }
+
+            await supabaseAdmin
+              .from('private_event_requests')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', existing.id);
+
+            synced++;
+          }
+          continue;
+        }
+
+        // ── New thread: full creation flow ──
+
+        // Step 1: Find customer info
+        // First check for a Framer notification (website form submission)
+        const framerMsg = parsedMessages.find(m => m._isFramer);
+        // Also find the first real customer reply (not Framer, not Café)
+        const customerReply = parsedMessages.find(m =>
+          m.direction === 'INBOUND' &&
+          !m._isFramer &&
+          m.from_email.toLowerCase() !== CAFE_EMAIL.toLowerCase()
+        );
+
+        let senderName = '';
+        let senderEmail = '';
+        let requestBody = '';
+
+        if (framerMsg) {
+          // Parse customer details from Framer HTML
+          const parsed = parseFramerNotification(framerMsg.body_html || '');
+
+          senderName = [parsed.firstName, parsed.lastName].filter(Boolean).join(' ') || '';
+          senderEmail = parsed.email || '';
+          requestBody = parsed.request || framerMsg.snippet || '';
+
+          // If Framer didn't have an email, try the customer reply
+          if (!senderEmail && customerReply) {
+            senderEmail = customerReply.from_email;
+            if (!senderName) senderName = customerReply.from_name;
           }
 
-          // Update the event's updated_at timestamp
-          await supabaseAdmin
-            .from('private_event_requests')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', existing.id);
+          // Rewrite the Framer message's from fields to show the actual customer
+          if (senderName || senderEmail) {
+            framerMsg.from_name = senderName || 'Klant (via website)';
+            framerMsg.from_email = senderEmail || FRAMER_EMAIL;
+          }
+        } else if (customerReply) {
+          // No Framer message — use first customer reply
+          senderName = customerReply.from_name;
+          senderEmail = customerReply.from_email;
+          requestBody = customerReply.body_plain || customerReply.snippet || '';
+        } else {
+          // No inbound at all — skip
+          const dirs = parsedMessages.map(m => `${m.from_email}=${m.direction}`).join(', ');
+          skipped.push(`${gmailThread.id}: no inbound (${dirs})`);
+          continue;
+        }
 
+        if (!senderEmail) {
+          skipped.push(`${gmailThread.id}: no email found (framer=${!!framerMsg}, customer=${!!customerReply}, name=${senderName})`);
+          continue;
+        }
+
+        // Step 2: AI extraction on the request body
+        let extractedData = {
+          senderName: senderName,
+          occasionType: null as string | null,
+          eventDate: null as string | null,
+          startTime: null as string | null,
+          endTime: null as string | null,
+          guestCount: null as number | null,
+          specialNotes: null as string | null,
+          aiSummary: null as string | null,
+        };
+
+        if (requestBody && !skipAI) {
+          try {
+            extractedData = await extractEventDataFromEmail(requestBody);
+          } catch (error) {
+            console.warn('[SYNC] AI extraction failed:', error);
+          }
+        }
+
+        // Step 3: Insert the event
+        const newRequest = {
+          gmail_thread_id: gmailThread.id!,
+          sender_name: extractedData.senderName || senderName,
+          sender_email: senderEmail,
+          occasion_type: extractedData.occasionType,
+          event_date: extractedData.eventDate,
+          start_time: extractedData.startTime,
+          end_time: extractedData.endTime,
+          guest_count: extractedData.guestCount,
+          special_notes: extractedData.specialNotes,
+          ai_summary: extractedData.aiSummary,
+          status: 'TO_ANSWER' as ThreadStatus,
+        };
+
+        const { data: created, error: insertError } = await supabaseAdmin
+          .from('private_event_requests')
+          .insert(newRequest)
+          .select()
+          .single();
+
+        if (insertError) {
+          errors.push(`Thread ${gmailThread.id}: ${insertError.message}`);
+          continue;
+        }
+
+        if (created) {
+          // Step 4: Insert all messages
+          for (const msg of parsedMessages) {
+            const { _isFramer, ...msgData } = msg;
+            const { error: msgError } = await supabaseAdmin.from('messages').insert({
+              thread_id: created.id,
+              ...msgData,
+            });
+            if (msgError) console.error('[SYNC] Message insert error:', msgError.message);
+          }
           synced++;
         }
-        continue;
-      }
-
-      // ── New thread: full creation flow ──
-      const firstInbound = parsedMessages.find(m => m.direction === 'INBOUND');
-      if (!firstInbound) continue;
-
-      const senderEmail = firstInbound.from_email;
-      const senderName = firstInbound.from_name;
-      const emailBody = firstInbound.body_plain || firstInbound.snippet || '';
-
-      // AI extraction
-      let extractedData = {
-        senderName: senderName,
-        occasionType: null as string | null,
-        eventDate: null as string | null,
-        startTime: null as string | null,
-        endTime: null as string | null,
-        guestCount: null as number | null,
-        specialNotes: null as string | null,
-        aiSummary: null as string | null,
-      };
-
-      try {
-        extractedData = await extractEventDataFromEmail(emailBody);
-      } catch (error) {
-        console.warn('AI extraction failed, using defaults:', error);
-      }
-
-      const newRequest: PrivateEventRequest = {
-        id: '',
-        gmail_thread_id: gmailThread.id!,
-        sender_name: extractedData.senderName || senderName,
-        sender_email: senderEmail,
-        occasion_type: extractedData.occasionType,
-        event_date: extractedData.eventDate,
-        start_time: extractedData.startTime,
-        end_time: extractedData.endTime,
-        guest_count: extractedData.guestCount,
-        special_notes: extractedData.specialNotes,
-        ai_summary: extractedData.aiSummary,
-        status: 'TO_ANSWER' as ThreadStatus,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        archived_at: null,
-      };
-
-      const { data: created } = await supabaseAdmin
-        .from('private_event_requests')
-        .insert(newRequest)
-        .select()
-        .single();
-
-      if (created) {
-        for (const msg of parsedMessages) {
-          await supabaseAdmin.from('messages').insert({
-            thread_id: created.id,
-            ...msg,
-          });
-        }
-        synced++;
+      } catch (threadError: any) {
+        errors.push(`Thread ${gmailThread.id}: ${threadError.message}`);
       }
     }
 
-    return NextResponse.json({ success: true, synced });
+    return NextResponse.json({
+      success: true,
+      synced,
+      totalThreads: gmailThreads.length,
+      errors: errors.slice(0, 5),
+      skipped: skipped.slice(0, 10),
+    });
   } catch (error: any) {
-    console.error('Gmail sync error:', error);
+    console.error('[SYNC] Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
