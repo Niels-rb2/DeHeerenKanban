@@ -11,6 +11,120 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+/**
+ * Strip quoted replies, forwarded content and signatures from an email body
+ * so each message bubble only shows the original content.
+ */
+function cleanMessageForDisplay(body: string): string {
+  if (!body) return '';
+
+  const lines = body.split('\n');
+  const cleaned: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Stop at quoted lines (> prefix)
+    if (trimmed.startsWith('>')) break;
+
+    // Stop at forwarded-message separators
+    // "___" or "---" (3+ underscores/dashes as separator)
+    if (/^[_]{3,}$/.test(trimmed) || /^[-]{3,}$/.test(trimmed)) break;
+
+    // Stop at forwarded headers: "Van: ...", "From: ..."
+    if (/^Van:\s+/i.test(trimmed) || /^From:\s+/i.test(trimmed)) break;
+
+    // Stop at "Op <date> schreef" / "Op <date> bij <time>" (Dutch quote header)
+    if (/^Op\s+\d{1,2}\s+\w+\s+\d{4}\s+bij\s+/i.test(trimmed)) break;
+    if (/^Op\s+\d{1,2}\s+\w+\s+\d{4}\s+om\s+/i.test(trimmed)) break;
+    if (/^Op\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s/i.test(trimmed)) break;
+
+    // Stop at "On <date> ... wrote:" (English quote header)
+    if (/^On\s+.+wrote:\s*$/i.test(trimmed)) break;
+
+    // Stop at "Verzonden vanuit" / "Verstuurd vanaf" / "Sent from"
+    if (/^(Verzonden vanuit|Verstuurd vanaf|Sent from)\s/i.test(trimmed)) break;
+
+    // Stop at signature markers followed by contact info
+    if (/^(Met vriendelijke groet|Mvg|Groet|Groeten|Groetjes|Kind regards|Best regards|Vriendelijke groet|Hartelijke groet|Liefs|Cheers)\s*[,.]?\s*$/i.test(trimmed)) {
+      // Include the greeting line itself, then grab the name line(s) after it
+      cleaned.push(line);
+      // Grab up to 2 more lines (name + maybe one more), then stop
+      for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+        const nextTrimmed = lines[j].trim();
+        // If this next line looks like a URL, phone, email header, or separator, stop
+        if (!nextTrimmed) { cleaned.push(lines[j]); continue; }
+        if (/^(www\.|http|[_]{3}|[-]{3}|Van:|From:|Op\s+\d|0\d{2,4}[\s-])/.test(nextTrimmed)) break;
+        cleaned.push(lines[j]);
+      }
+      break;
+    }
+
+    cleaned.push(line);
+  }
+
+  // Final cleanup: trim trailing empty lines
+  let result = cleaned.join('\n').trimEnd();
+
+  // Handle inline signatures in HTML-converted text (no line breaks)
+  // e.g. "Tekst hier.  Met vriendelijke groet,Suzan Bijmanwww..."
+  const inlineSigPatterns = [
+    /\s{2,}Met vriendelijke groet[,.]?.*/i,
+    /\s{2,}Mvg[,.]?.*/i,
+    /\s{2,}Groet(?:en|jes)?[,.]?.*/i,
+    /\s{2,}Kind regards[,.]?.*/i,
+  ];
+  for (const pattern of inlineSigPatterns) {
+    const match = result.match(pattern);
+    if (match && match.index !== undefined) {
+      result = result.substring(0, match.index).trimEnd();
+      break;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Convert HTML email body to clean plain text.
+ */
+function htmlToDisplayText(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(p|div|tr|li|blockquote)[^>]*>/gi, '\n')
+    .replace(/<\/?(td|th)[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#\d+;/g, '')
+    .replace(/[\u200B\u00AD\u034F\u2007\u200C\u200D\uFEFF]/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Get clean display text for a message.
+ */
+function getCleanBody(msg: { body_plain: string | null; body_html: string | null; snippet: string }): string {
+  let body = msg.body_plain || '';
+
+  // If no plain text, try HTML
+  if (!body && msg.body_html) {
+    body = htmlToDisplayText(msg.body_html);
+  }
+
+  // Fallback to snippet
+  if (!body) body = msg.snippet || '';
+
+  return cleanMessageForDisplay(body);
+}
+
 const STATUS_OPTIONS: ThreadStatus[] = [
   'TO_ANSWER',
   'ANSWERED',
@@ -502,7 +616,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                         isOut ? 'msg-outbound' : 'msg-inbound'
                       }`}
                     >
-                      {msg.body_plain || msg.snippet}
+                      {getCleanBody(msg)}
                     </div>
                   </div>
                 </div>
