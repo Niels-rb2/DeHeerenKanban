@@ -17,6 +17,7 @@ const OCCASION_LABELS: Record<string, string> = {
   besloten_feest: '🎊 Besloten feest',
   bedrijfsfeest: '🏢 Bedrijfsfeest',
   bedrijfspubquiz: '🧠 Bedrijfspubquiz',
+  themafeest: '🎭 Themafeest',
   anders: '🎉 Anders',
 };
 

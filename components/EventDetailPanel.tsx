@@ -218,6 +218,7 @@ const OCCASION_LABELS: Record<string, string> = {
   besloten_feest: '🎊 Besloten feest',
   bedrijfsfeest: '🏢 Bedrijfsfeest',
   bedrijfspubquiz: '🧠 Bedrijfspubquiz',
+  themafeest: '🎭 Themafeest',
   anders: '🎉 Anders',
 };
 
@@ -552,6 +553,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     <option value="besloten_feest">🎊 Besloten feest</option>
                     <option value="bedrijfsfeest">🏢 Bedrijfsfeest</option>
                     <option value="bedrijfspubquiz">🧠 Bedrijfspubquiz</option>
+                    <option value="themafeest">🎭 Themafeest</option>
                     <option value="anders">🎉 Anders</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
