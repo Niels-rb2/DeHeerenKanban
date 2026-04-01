@@ -133,7 +133,7 @@ Retourneer ALLEEN een JSON-object:
 {
   "senderName": "naam klant (niet café)",
   "senderEmail": "klant email (niet framer/elfsight/café) of null",
-  "occasionType": "verjaardag|receptie|borrel|diner|trouwerij|jubileum|bedrijfsfeest|anders of null",
+  "occasionType": "verjaardag|receptie|borrel|diner|diner_borrel|bruiloft|jubileum|besloten_feest|bedrijfsfeest|bedrijfspubquiz|anders of null",
   "eventDate": "YYYY-MM-DD of null",
   "startTime": "HH:MM of null",
   "endTime": "HH:MM of null",

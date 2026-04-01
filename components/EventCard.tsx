@@ -10,10 +10,13 @@ const OCCASION_LABELS: Record<string, string> = {
   receptie: '🥂 Receptie',
   borrel: '🍺 Borrel',
   diner: '🍽️ Diner',
-  trouwerij: '💍 Trouwerij',
+  diner_borrel: '🍽️🍺 Diner + borrel',
+  trouwerij: '💍 Bruiloft',
   bruiloft: '💍 Bruiloft',
   jubileum: '🎉 Jubileum',
-  bedrijfsfeest: '🎉 Bedrijfsfeest',
+  besloten_feest: '🎊 Besloten feest',
+  bedrijfsfeest: '🏢 Bedrijfsfeest',
+  bedrijfspubquiz: '🧠 Bedrijfspubquiz',
   anders: '🎉 Anders',
 };
 

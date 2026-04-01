@@ -211,10 +211,13 @@ const OCCASION_LABELS: Record<string, string> = {
   receptie: '🥂 Receptie',
   borrel: '🍺 Borrel',
   diner: '🍽️ Diner',
-  trouwerij: '💍 Trouwerij',
+  diner_borrel: '🍽️🍺 Diner + borrel',
+  trouwerij: '💍 Bruiloft',
   bruiloft: '💍 Bruiloft',
   jubileum: '🎉 Jubileum',
-  bedrijfsfeest: '🎉 Bedrijfsfeest',
+  besloten_feest: '🎊 Besloten feest',
+  bedrijfsfeest: '🏢 Bedrijfsfeest',
+  bedrijfspubquiz: '🧠 Bedrijfspubquiz',
   anders: '🎉 Anders',
 };
 
@@ -543,10 +546,12 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     <option value="receptie">🥂 Receptie</option>
                     <option value="borrel">🍺 Borrel</option>
                     <option value="diner">🍽️ Diner</option>
-                    <option value="trouwerij">💍 Trouwerij</option>
+                    <option value="diner_borrel">🍽️🍺 Diner + borrel</option>
                     <option value="bruiloft">💍 Bruiloft</option>
                     <option value="jubileum">🎉 Jubileum</option>
-                    <option value="bedrijfsfeest">🎉 Bedrijfsfeest</option>
+                    <option value="besloten_feest">🎊 Besloten feest</option>
+                    <option value="bedrijfsfeest">🏢 Bedrijfsfeest</option>
+                    <option value="bedrijfspubquiz">🧠 Bedrijfspubquiz</option>
                     <option value="anders">🎉 Anders</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
