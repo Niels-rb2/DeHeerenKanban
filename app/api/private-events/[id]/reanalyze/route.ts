@@ -7,6 +7,10 @@ export async function POST(
 ) {
   const { id } = await params;
 
+  // Debug: check if ANTHROPIC_API_KEY is loaded
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  console.log('ANTHROPIC_API_KEY present:', !!apiKey, 'length:', apiKey?.length, 'starts with:', apiKey?.substring(0, 10));
+
   try {
     // Get the event
     const { data: event, error: eventError } = await supabaseAdmin

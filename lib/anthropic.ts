@@ -1,9 +1,16 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-function getClient() {
-  return new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
-  });
+let _client: Anthropic | null = null;
+
+function getClient(): Anthropic {
+  if (!_client) {
+    const key = process.env.ANTHROPIC_API_KEY;
+    if (!key) {
+      throw new Error(`ANTHROPIC_API_KEY is not set. Available env keys: ${Object.keys(process.env).filter(k => k.includes('ANTHROPIC') || k.includes('API')).join(', ') || 'none matching'}`);
+    }
+    _client = new Anthropic({ apiKey: key });
+  }
+  return _client;
 }
 
 export interface ExtractedEventData {
