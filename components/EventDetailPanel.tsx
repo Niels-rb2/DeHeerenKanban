@@ -516,7 +516,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                 className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
                 style={{
                   background: 'var(--clr-input)',
-                  borderColor: 'var(--clr-outline)',
+                  borderColor: 'var(--clr-input-border)',
                   color: 'var(--clr-text)',
                 }}
               />
@@ -530,7 +530,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                 className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
                 style={{
                   background: 'var(--clr-input)',
-                  borderColor: 'var(--clr-outline)',
+                  borderColor: 'var(--clr-input-border)',
                   color: 'var(--clr-text)',
                 }}
               >
@@ -586,7 +586,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                 className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
                 style={{
                   background: 'var(--clr-input)',
-                  borderColor: 'var(--clr-outline)',
+                  borderColor: 'var(--clr-input-border)',
                   color: 'var(--clr-text)',
                 }}
               />
@@ -611,7 +611,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                 className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 resize-none overflow-hidden"
                 style={{
                   background: 'var(--clr-input)',
-                  borderColor: 'var(--clr-outline)',
+                  borderColor: 'var(--clr-input-border)',
                   color: 'var(--clr-text)',
                 }}
               />

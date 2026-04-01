@@ -37,6 +37,8 @@
    DESIGN TOKENS — Light
    ════════════════════════════════════════════ */
 :root {
+  color-scheme: light;
+
   --clr-bg:              #FAF7F4;
   --clr-surface:         #FFFFFF;
   --clr-surface-low:     #F5EDE8;
@@ -80,6 +82,8 @@
    DESIGN TOKENS — Dark (MD3-compliant)
    ════════════════════════════════════════════ */
 .dark {
+  color-scheme: dark;
+
   --clr-bg:              #131110;
   --clr-surface:         #1E1B18;
   --clr-surface-low:     #2B2722;

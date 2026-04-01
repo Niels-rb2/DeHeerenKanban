@@ -271,40 +271,38 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                 >
                   <button
                     onClick={() => { setClosedTab('NO_GO'); setExpanded(false); }}
-                    className="flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center"
-                    style={{
-                      background: closedTab === 'NO_GO' ? '#fef2f2' : 'transparent',
-                      color: closedTab === 'NO_GO' ? '#dc2626' : 'var(--clr-text-muted)',
-                      border: closedTab === 'NO_GO' ? '1.5px solid #fca5a5' : '1.5px solid transparent',
-                    }}
+                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center ${
+                      closedTab === 'NO_GO'
+                        ? 'bg-red-50 text-red-600 border-[1.5px] border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/60'
+                        : 'border-[1.5px] border-transparent text-[var(--clr-text-muted)]'
+                    }`}
                   >
                     Gaat niet door
                     <span
-                      className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold"
-                      style={{
-                        background: closedTab === 'NO_GO' ? '#dc2626' : 'var(--clr-surface-low)',
-                        color: closedTab === 'NO_GO' ? '#fff' : 'var(--clr-text-subtle)',
-                      }}
+                      className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold ${
+                        closedTab === 'NO_GO'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-[var(--clr-surface-low)] text-[var(--clr-text-subtle)]'
+                      }`}
                     >
                       {noGoCount}
                     </span>
                   </button>
                   <button
                     onClick={() => { setClosedTab('ARCHIVE'); setExpanded(false); }}
-                    className="flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center"
-                    style={{
-                      background: closedTab === 'ARCHIVE' ? '#f3f4f6' : 'transparent',
-                      color: closedTab === 'ARCHIVE' ? '#4b5563' : 'var(--clr-text-muted)',
-                      border: closedTab === 'ARCHIVE' ? '1.5px solid #d1d5db' : '1.5px solid transparent',
-                    }}
+                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center ${
+                      closedTab === 'ARCHIVE'
+                        ? 'bg-gray-100 text-gray-600 border-[1.5px] border-gray-300 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-600/60'
+                        : 'border-[1.5px] border-transparent text-[var(--clr-text-muted)]'
+                    }`}
                   >
                     Archief
                     <span
-                      className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold"
-                      style={{
-                        background: closedTab === 'ARCHIVE' ? '#6b7280' : 'var(--clr-surface-low)',
-                        color: closedTab === 'ARCHIVE' ? '#fff' : 'var(--clr-text-subtle)',
-                      }}
+                      className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold ${
+                        closedTab === 'ARCHIVE'
+                          ? 'bg-gray-500 text-white dark:bg-gray-500'
+                          : 'bg-[var(--clr-surface-low)] text-[var(--clr-text-subtle)]'
+                      }`}
                     >
                       {archiveCount}
                     </span>
