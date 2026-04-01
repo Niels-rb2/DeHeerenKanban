@@ -266,22 +266,22 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
 
                 {/* Tab toggle */}
                 <div
-                  className="flex rounded-lg p-1 gap-1"
+                  className="flex rounded-full p-1 gap-1"
                   style={{ background: 'var(--clr-surface)' }}
                 >
                   <button
                     onClick={() => { setClosedTab('NO_GO'); setExpanded(false); }}
-                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center ${
+                    className={`flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center border ${
                       closedTab === 'NO_GO'
-                        ? 'bg-red-50 text-red-600 border-[1.5px] border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/60'
-                        : 'border-[1.5px] border-transparent text-[var(--clr-text-muted)]'
+                        ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/40'
+                        : 'border-transparent text-[var(--clr-text-muted)]'
                     }`}
                   >
                     Gaat niet door
                     <span
                       className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold ${
                         closedTab === 'NO_GO'
-                          ? 'bg-red-600 text-white'
+                          ? 'bg-red-800 text-white dark:bg-red-300 dark:text-red-950'
                           : 'bg-[var(--clr-surface-low)] text-[var(--clr-text-subtle)]'
                       }`}
                     >
@@ -290,17 +290,17 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                   </button>
                   <button
                     onClick={() => { setClosedTab('ARCHIVE'); setExpanded(false); }}
-                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all cursor-pointer text-center ${
+                    className={`flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center border ${
                       closedTab === 'ARCHIVE'
-                        ? 'bg-gray-100 text-gray-600 border-[1.5px] border-gray-300 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-600/60'
-                        : 'border-[1.5px] border-transparent text-[var(--clr-text-muted)]'
+                        ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700/40'
+                        : 'border-transparent text-[var(--clr-text-muted)]'
                     }`}
                   >
                     Archief
                     <span
                       className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold ${
                         closedTab === 'ARCHIVE'
-                          ? 'bg-gray-500 text-white dark:bg-gray-500'
+                          ? 'bg-gray-600 text-white dark:bg-gray-400 dark:text-gray-950'
                           : 'bg-[var(--clr-surface-low)] text-[var(--clr-text-subtle)]'
                       }`}
                     >

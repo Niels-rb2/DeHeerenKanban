@@ -665,12 +665,12 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
         {/* Sort toggle */}
         {messages.length > 1 && (
           <div
-            className="flex rounded-lg p-1 gap-1 mb-4"
+            className="flex rounded-full p-1 gap-1 mb-4"
             style={{ background: 'var(--clr-surface-low)' }}
           >
             <button
               onClick={() => setNewestFirst(true)}
-              className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all cursor-pointer text-center"
+              className="flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-all cursor-pointer text-center"
               style={{
                 background: newestFirst ? 'var(--clr-bg)' : 'transparent',
                 color: newestFirst ? 'var(--clr-text)' : 'var(--clr-text-muted)',
@@ -681,7 +681,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             </button>
             <button
               onClick={() => setNewestFirst(false)}
-              className="flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all cursor-pointer text-center"
+              className="flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-all cursor-pointer text-center"
               style={{
                 background: !newestFirst ? 'var(--clr-bg)' : 'transparent',
                 color: !newestFirst ? 'var(--clr-text)' : 'var(--clr-text-muted)',
