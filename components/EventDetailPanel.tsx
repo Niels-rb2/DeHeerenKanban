@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import DOMPurify from 'dompurify';
 import { PrivateEventRequest, ThreadStatus, Message } from '@/lib/types';
 import { formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
 import {
@@ -87,42 +88,83 @@ function cleanMessageForDisplay(body: string): string {
 }
 
 /**
- * Convert HTML email body to clean plain text.
+ * Clean HTML email: strip quoted content, signatures, and sanitize for display.
+ * Returns safe HTML string ready for dangerouslySetInnerHTML.
  */
-function htmlToDisplayText(html: string): string {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/?(p|div|tr|li|blockquote)[^>]*>/gi, '\n')
-    .replace(/<\/?(td|th)[^>]*>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#\d+;/g, '')
-    .replace(/[\u200B\u00AD\u034F\u2007\u200C\u200D\uFEFF]/g, '')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+function cleanHtmlForDisplay(html: string): string {
+  // Remove <style> blocks
+  let cleaned = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+  // Remove signature block: everything from "Met vriendelijke groet" onwards
+  // These patterns match the signature and everything after it (quoted replies, etc.)
+  const sigPatterns = [
+    // Div/paragraph containing signature greeting
+    /<div[^>]*>\s*Met vriendelijke groet[\s\S]*$/i,
+    /<div[^>]*>\s*Mvg[\s,.][\s\S]*$/i,
+    /<div[^>]*>\s*Groet(?:en|jes)?[\s,.][\s\S]*$/i,
+    /<div[^>]*>\s*Kind regards[\s\S]*$/i,
+    // Gmail quote blocks
+    /<div\s+class="gmail_quote"[\s\S]*$/i,
+    // Outlook quote blocks
+    /<div\s+id="appendonsend"[\s\S]*$/i,
+    /<div\s+style="border:none;border-top:solid\s+#[A-F0-9]+[\s\S]*$/i,
+    // Blockquote (generic quote marker)
+    /<blockquote[\s\S]*$/i,
+  ];
+
+  for (const pattern of sigPatterns) {
+    cleaned = cleaned.replace(pattern, '');
+  }
+
+  // Remove inline font-family/font-size styles but keep meaningful ones (bold, etc.)
+  cleaned = cleaned.replace(/\s*style="[^"]*?font-family:[^"]*?"/gi, (match) => {
+    // Keep bold/italic if present in the style
+    if (/font-weight:\s*bold/i.test(match) || /font-style:\s*italic/i.test(match)) {
+      return match;
+    }
+    return '';
+  });
+
+  // Remove Bloop custom font div IDs (clean up clutter)
+  cleaned = cleaned.replace(/\s*id="bloop_customfont"/gi, '');
+  cleaned = cleaned.replace(/\s*id="docs-internal-guid-[^"]*"/gi, '');
+
+  // Sanitize with DOMPurify - allow basic formatting tags
+  const sanitized = DOMPurify.sanitize(cleaned, {
+    ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'div', 'span', 'h1', 'h2', 'h3', 'a'],
+    ALLOWED_ATTR: ['href', 'target'],
+    ADD_ATTR: ['target'],
+  });
+
+  // Add target="_blank" to all links
+  return sanitized.replace(/<a\s/gi, '<a target="_blank" rel="noopener noreferrer" ');
 }
 
 /**
- * Get clean display text for a message.
+ * Convert plain-text email body to formatted HTML for display.
  */
-function getCleanBody(msg: { body_plain: string | null; body_html: string | null; snippet: string }): string {
-  let body = msg.body_plain || '';
+function plainTextToHtml(text: string): string {
+  const cleaned = cleanMessageForDisplay(text);
+  // Escape HTML entities, then convert line breaks to <br>
+  return cleaned
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
 
-  // If no plain text, try HTML
-  if (!body && msg.body_html) {
-    body = htmlToDisplayText(msg.body_html);
+/**
+ * Get clean HTML for a message, preferring formatted HTML when available.
+ */
+function getMessageHtml(msg: { body_plain: string | null; body_html: string | null; snippet: string }): string {
+  // Prefer HTML for richer formatting
+  if (msg.body_html) {
+    return cleanHtmlForDisplay(msg.body_html);
   }
 
-  // Fallback to snippet
-  if (!body) body = msg.snippet || '';
-
-  return cleanMessageForDisplay(body);
+  // Fall back to plain text → HTML
+  const text = msg.body_plain || msg.snippet || '';
+  return plainTextToHtml(text);
 }
 
 const STATUS_OPTIONS: ThreadStatus[] = [
@@ -612,12 +654,11 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     </div>
                     {/* Bubble */}
                     <div
-                      className={`p-3.5 text-sm whitespace-pre-wrap leading-relaxed ${
+                      className={`p-3.5 text-sm leading-relaxed msg-body ${
                         isOut ? 'msg-outbound' : 'msg-inbound'
                       }`}
-                    >
-                      {getCleanBody(msg)}
-                    </div>
+                      dangerouslySetInnerHTML={{ __html: getMessageHtml(msg) }}
+                    />
                   </div>
                 </div>
               );
