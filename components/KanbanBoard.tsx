@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { PrivateEventRequest, ThreadStatus } from '@/lib/types';
 import { EventCard } from './EventCard';
@@ -62,6 +62,11 @@ const COLLAPSIBLE_COLUMNS: ThreadStatus[] = ['NO_GO', 'ARCHIVE'];
 export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
   const [events, setEvents] = useState(initialEvents);
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
+
+  // Sync internal state when parent passes new (filtered) events
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
 
   const byStatus = (status: ThreadStatus) => events[status] || [];
 
