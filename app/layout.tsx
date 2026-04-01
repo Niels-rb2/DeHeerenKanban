@@ -35,14 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl" suppressHydrationWarning className={`${bricolage.variable} ${geistMono.variable}`}>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var d=document.documentElement.classList;d.remove('light','dark');var t=localStorage.getItem('theme')||'light';d.add(t)}catch(e){}`,
-          }}
-        />
-      </head>
+    <html lang="nl" suppressHydrationWarning className={`${bricolage.variable} ${geistMono.variable} light`}>
       <body suppressHydrationWarning className="antialiased min-h-screen">
         <ThemeProvider>
           <SearchProvider>
