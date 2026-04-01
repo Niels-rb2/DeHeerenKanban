@@ -81,11 +81,12 @@ export async function GET(request: Request) {
     const { data, error } = await supabaseAdmin
       .from('private_event_requests')
       .select('*')
+      .order('event_date', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    // Group by status
+    // Group by status, sorted: soonest event_date first, nulls at end
     const grouped: Record<ThreadStatus, PrivateEventRequest[]> = {
       TO_ANSWER: [],
       ANSWERED: [],
