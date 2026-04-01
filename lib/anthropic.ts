@@ -148,8 +148,9 @@ REGELS VOOR aiSummary:
 - Geef een opsomming van de BELANGRIJKSTE feiten als bullet points.
 - Begin elke bullet met "• ".
 - Neem op: gelegenheid, datum, tijdstip (begin-eind), aantal personen, alle bijzonderheden/wensen, en de huidige status/uitkomst van het gesprek.
+- BELANGRIJK: Gebruik ALTIJD "Café De Heeren" in plaats van "café" of "Café". Nooit alleen "café" schrijven.
 - Voorbeeld:
-  "• Verjaardagsborrel op zaterdag 15 maart 2025\n• 18:00 – 22:00, 35 personen\n• 3x bittergarnituur, patatje aan het einde met eigen zakje\n• Eigen Spotify playlist\n• Café heeft bevestigd, feestje gaat door"
+  "• Verjaardagsborrel op zaterdag 15 maart 2025\n• 18:00 – 22:00, 35 personen\n• 3x bittergarnituur, patatje aan het einde met eigen zakje\n• Eigen Spotify playlist\n• Café De Heeren heeft bevestigd, feestje gaat door"
 
 StatusHint:
 - TO_ANSWER: Café nog niet gereageerd
