@@ -270,11 +270,14 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) throw new Error('Reanalyze failed');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.details || body.error || `HTTP ${res.status}`);
+      }
       toast.success('Heropgeanalyseerd');
       window.location.reload();
-    } catch {
-      toast.error('Reanalyze mislukt');
+    } catch (err: any) {
+      toast.error(`Reanalyze mislukt: ${err?.message || 'onbekende fout'}`);
     } finally {
       setReanalyzing(false);
     }

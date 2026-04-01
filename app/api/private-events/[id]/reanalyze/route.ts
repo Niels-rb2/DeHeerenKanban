@@ -76,17 +76,17 @@ export async function POST(
       }
 
       return Response.json({ data });
-    } catch (extractError) {
+    } catch (extractError: any) {
       console.error('AI extraction error:', extractError);
       return Response.json(
-        { error: 'Failed to extract event data' },
+        { error: 'Failed to extract event data', details: extractError?.message || String(extractError) },
         { status: 500 }
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error reanalyzing event:', error);
     return Response.json(
-      { error: 'Failed to reanalyze event' },
+      { error: 'Failed to reanalyze event', details: error?.message || String(error) },
       { status: 500 }
     );
   }
