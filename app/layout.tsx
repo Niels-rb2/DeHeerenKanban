@@ -36,6 +36,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl" suppressHydrationWarning className={`${bricolage.variable} ${geistMono.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var d=document.documentElement.classList;d.remove('light','dark');var t=localStorage.getItem('theme')||'light';d.add(t)}catch(e){}`,
+          }}
+        />
+      </head>
       <body suppressHydrationWarning className="antialiased min-h-screen">
         <ThemeProvider>
           <SearchProvider>
