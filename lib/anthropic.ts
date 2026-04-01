@@ -1,13 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 function getClient(): Anthropic {
-  // Read env var fresh each time — Next.js 16 Turbopack may not have
-  // env vars ready at module-init or first call in cached singletons.
-  const key = process.env.ANTHROPIC_API_KEY;
+  // Use CDH_ANTHROPIC_KEY to avoid conflict with the SDK which auto-reads
+  // ANTHROPIC_API_KEY at import-time (and may get an empty value in Turbopack).
+  const key = process.env.CDH_ANTHROPIC_KEY || process.env.ANTHROPIC_API_KEY;
   if (!key) {
-    const val = JSON.stringify(key);
-    const all = Object.keys(process.env).filter(k => k.includes('ANTHROPIC') || k.includes('API'));
-    throw new Error(`ANTHROPIC_API_KEY value is ${val}. Matching env keys: [${all.join(', ')}]. Hint: restart dev server after changing .env.local`);
+    throw new Error('No Anthropic API key found. Set CDH_ANTHROPIC_KEY in .env.local');
   }
   return new Anthropic({ apiKey: key });
 }
