@@ -81,6 +81,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabaseAdmin
       .from('private_event_requests')
       .select('*')
+      .neq('sender_name', '_DISMISSED')
       .order('event_date', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false });
 
