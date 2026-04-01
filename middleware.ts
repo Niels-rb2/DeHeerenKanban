@@ -1,26 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-export async function middleware(request: NextRequest) {
-  const session = await auth();
-  const pathname = request.nextUrl.pathname;
+export default auth((req) => {
+  // Skip protection in demo mode
+  if (isDemo) return NextResponse.next();
 
-  // Protect /private-events routes (skip protection in demo mode)
-  if (pathname.startsWith('/private-events') || pathname.startsWith('/api/private-events')) {
-    if (!isDemo && !session?.user) {
-      // Redirect to login
-      if (pathname.startsWith('/api')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      return NextResponse.redirect(new URL('/login', request.url));
+  const pathname = req.nextUrl.pathname;
+
+  // req.auth is set by the auth() wrapper
+  if (!req.auth?.user) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ['/private-events/:path*', '/api/private-events/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/api/private-events/:path*',
+    '/api/gmail/:path*',
+  ],
 };
