@@ -541,6 +541,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                       borderColor: 'var(--clr-input-border)',
                       color: 'var(--clr-text)',
                     }}
+                    suppressHydrationWarning
                   >
                     <option value="">-- Selecteer --</option>
                     <option value="verjaardag">🎂 Verjaardag</option>
