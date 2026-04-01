@@ -76,13 +76,22 @@ export function EventCard({ event }: EventCardProps) {
             {new Date(event.event_date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
             {event.start_time && ` om ${event.start_time}`}
           </span>
-          {event.guest_count && (
-            <>
-              <span style={{ color: 'var(--clr-text-subtle)' }}>·</span>
-              <Users size={11} />
-              <span>{event.guest_count} p.</span>
-            </>
-          )}
+        </div>
+      )}
+
+      {/* Guest count badge */}
+      {event.guest_count != null && event.guest_count > 0 && (
+        <div className="flex items-center mt-1.5">
+          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+            event.guest_count >= 75
+              ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/40'
+              : event.guest_count >= 50
+                ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/40'
+                : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/40'
+          }`}>
+            <Users size={10} />
+            {event.guest_count} personen
+          </span>
         </div>
       )}
 
