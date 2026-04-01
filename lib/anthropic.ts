@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getClient() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY!,
+  });
+}
 
 export interface ExtractedEventData {
   senderName: string;
@@ -161,7 +163,7 @@ StatusHint:
 
 senderEmail: echte klant-email, NIET noreply@framer.com, notifications@forms.elfsightmail.com, info@cafedeheeren.nl`;
 
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1024,
     system: systemPrompt,
@@ -206,7 +208,7 @@ ${emailBody}
 
 Retourneer ALLEEN het JSON-object, geen extra tekst.`;
 
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1024,
     system: systemPrompt,
