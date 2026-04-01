@@ -468,7 +468,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
           <button
             onClick={handleReanalyze}
             disabled={reanalyzing}
-            className="btn-gold text-xs inline-flex items-center gap-1.5 py-2 px-4 self-start"
+            className="btn-gold text-sm inline-flex items-center gap-1.5 py-3 px-6 rounded-full font-semibold self-start mt-4"
           >
             <Sparkles size={12} />
             {reanalyzing ? 'Bezig…' : 'Heropanalyse'}
