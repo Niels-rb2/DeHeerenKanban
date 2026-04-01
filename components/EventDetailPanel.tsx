@@ -329,7 +329,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   return (
     <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
       {/* ═══ LEFT — Event details ═════════════════ */}
-      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto pr-8">
+      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto pr-8 pb-8">
         {/* Logo + back button */}
         <div className="flex flex-col items-start gap-0">
           <Link href="/dashboard" aria-label="Café De Heeren – feestjes" className="w-[160px] h-[64px] m-5 block">
