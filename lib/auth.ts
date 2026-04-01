@@ -17,15 +17,61 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, account }) {
+      // On initial sign-in, store tokens
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
+        return token;
       }
-      return token;
+
+      // If token hasn't expired yet, return as-is
+      if (typeof token.expiresAt === 'number' && Date.now() < token.expiresAt * 1000) {
+        return token;
+      }
+
+      // Token expired — refresh it
+      if (!token.refreshToken) {
+        console.error('No refresh token available, user must re-login');
+        return { ...token, error: 'RefreshTokenMissing' };
+      }
+
+      try {
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: process.env.GOOGLE_CLIENT_ID!,
+            client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+            grant_type: 'refresh_token',
+            refresh_token: token.refreshToken as string,
+          }),
+        });
+
+        const refreshed = await response.json();
+
+        if (!response.ok) {
+          console.error('Failed to refresh token:', refreshed);
+          return { ...token, error: 'RefreshTokenError' };
+        }
+
+        console.log('OAuth token refreshed successfully');
+
+        return {
+          ...token,
+          accessToken: refreshed.access_token,
+          expiresAt: Math.floor(Date.now() / 1000) + refreshed.expires_in,
+          // Keep existing refresh token if Google didn't send a new one
+          refreshToken: refreshed.refresh_token ?? token.refreshToken,
+        };
+      } catch (error) {
+        console.error('Error refreshing token:', error);
+        return { ...token, error: 'RefreshTokenError' };
+      }
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string;
+      session.error = token.error as string | undefined;
       return session;
     },
   },
