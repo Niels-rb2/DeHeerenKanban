@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { PrivateEventRequest, ThreadStatus } from '@/lib/types';
 import { StatsBar } from '@/components/StatsBar';
 import { KanbanBoard } from '@/components/KanbanBoard';
+import { useSearch } from '@/lib/search-context';
 import { toast } from 'sonner';
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
@@ -66,17 +66,16 @@ function filterEvents(
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 function DashboardContent() {
-  const searchParams = useSearchParams();
-  const search = searchParams.get('q') ?? '';
+  const { query } = useSearch();
 
   const [allEvents, setAllEvents] = useState<Record<ThreadStatus, PrivateEventRequest[]> | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Filtered events, recalculated instantly when search or allEvents changes
+  // Filtered events, recalculated instantly when search query changes
   const events = useMemo(() => {
     if (!allEvents) return null;
-    return filterEvents(allEvents, search);
-  }, [allEvents, search]);
+    return filterEvents(allEvents, query);
+  }, [allEvents, query]);
 
   const fetchEvents = useCallback(async () => {
     if (isDemo) {
@@ -207,19 +206,5 @@ function DashboardContent() {
 }
 
 export default function DashboardPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex gap-4 overflow-x-auto pb-4 mt-8">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className="kanban-column rounded-2xl animate-pulse shrink-0"
-            style={{ background: 'var(--clr-surface-low)', height: 400, width: 'calc(20% - 13px)', minWidth: '240px' }}
-          />
-        ))}
-      </div>
-    }>
-      <DashboardContent />
-    </Suspense>
-  );
+  return <DashboardContent />;
 }

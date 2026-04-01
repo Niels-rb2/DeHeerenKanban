@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { AdminNav } from '@/components/AdminNav';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { SearchProvider } from '@/lib/search-context';
 import './globals.css';
 
 const bricolage = Bricolage_Grotesque({
@@ -37,22 +38,24 @@ export default function RootLayout({
     <html lang="nl" suppressHydrationWarning className={`${bricolage.variable} ${geistMono.variable}`}>
       <body suppressHydrationWarning className="antialiased min-h-screen">
         <ThemeProvider>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-md focus:ring-2 focus:ring-ring"
-          >
-            Ga naar inhoud
-          </a>
+          <SearchProvider>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-md focus:ring-2 focus:ring-ring"
+            >
+              Ga naar inhoud
+            </a>
 
-          <AdminNav />
-          <main
-            className="flex flex-col px-4 pb-4 md:px-6 md:pb-6 min-h-screen"
-            id="main-content"
-          >
-            {children}
-          </main>
+            <AdminNav />
+            <main
+              className="flex flex-col px-4 pb-4 md:px-6 md:pb-6 min-h-screen"
+              id="main-content"
+            >
+              {children}
+            </main>
 
-          <Toaster richColors closeButton position="bottom-right" />
+            <Toaster richColors closeButton position="bottom-right" />
+          </SearchProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -2,49 +2,24 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { RefreshCw, Settings, Moon, Sun, Search, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Suspense, useState, useTransition, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { useSearch } from '@/lib/search-context';
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 function AdminNavInner() {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
+  const { query, setQuery } = useSearch();
   const [syncing, setSyncing] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [, startTransition] = useTransition();
 
   useEffect(() => setMounted(true), []);
-
-  const searchParam = searchParams.get('q') ?? '';
-  const [searchInput, setSearchInput] = useState(searchParam);
-
-  // Sync local state when URL param changes externally
-  useEffect(() => {
-    setSearchInput(searchParam);
-  }, [searchParam]);
-
-  function handleSearch(value: string) {
-    setSearchInput(value);
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set('q', value);
-    } else {
-      params.delete('q');
-    }
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    });
-  }
-
-  function clearSearch() {
-    handleSearch('');
-  }
 
   async function handleSync() {
     if (isDemo) {
@@ -89,8 +64,8 @@ function AdminNavInner() {
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
           <input
             type="text"
-            value={searchInput}
-            onChange={(e) => handleSearch(e.target.value)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Zoek op naam of datum…"
             className="w-full pl-8 pr-8 py-2 rounded-full text-sm border focus:outline-none focus:ring-2 transition-all"
             style={{
@@ -99,9 +74,9 @@ function AdminNavInner() {
               color: 'var(--clr-text)',
             }}
           />
-          {searchInput && (
+          {query && (
             <button
-              onClick={clearSearch}
+              onClick={() => setQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-colors cursor-pointer"
               style={{ color: 'var(--clr-text-muted)', background: 'var(--clr-surface-variant)' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--clr-text)'; }}
@@ -160,9 +135,5 @@ function AdminNavInner() {
 }
 
 export function AdminNav() {
-  return (
-    <Suspense fallback={null}>
-      <AdminNavInner />
-    </Suspense>
-  );
+  return <AdminNavInner />;
 }
