@@ -595,10 +595,20 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             {/* Bijzonderheden */}
             <Field label="Bijzonderheden">
               <textarea
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto';
+                    el.style.height = el.scrollHeight + 'px';
+                  }
+                }}
                 value={specialNotes}
-                onChange={(e) => setSpecialNotes(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 resize-none"
+                onChange={(e) => {
+                  setSpecialNotes(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+                rows={1}
+                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 resize-none overflow-hidden"
                 style={{
                   background: 'var(--clr-input)',
                   borderColor: 'var(--clr-outline)',
