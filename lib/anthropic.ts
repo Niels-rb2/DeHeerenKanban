@@ -1,16 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-let _client: Anthropic | null = null;
-
 function getClient(): Anthropic {
-  if (!_client) {
-    const key = process.env.ANTHROPIC_API_KEY;
-    if (!key) {
-      throw new Error(`ANTHROPIC_API_KEY is not set. Available env keys: ${Object.keys(process.env).filter(k => k.includes('ANTHROPIC') || k.includes('API')).join(', ') || 'none matching'}`);
-    }
-    _client = new Anthropic({ apiKey: key });
+  // Read env var fresh each time — Next.js 16 Turbopack may not have
+  // env vars ready at module-init or first call in cached singletons.
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    const val = JSON.stringify(key);
+    const all = Object.keys(process.env).filter(k => k.includes('ANTHROPIC') || k.includes('API'));
+    throw new Error(`ANTHROPIC_API_KEY value is ${val}. Matching env keys: [${all.join(', ')}]. Hint: restart dev server after changing .env.local`);
   }
-  return _client;
+  return new Anthropic({ apiKey: key });
 }
 
 export interface ExtractedEventData {
