@@ -100,13 +100,42 @@ function DashboardContent() {
 
       // Filter by search if needed
       if (search) {
-        const s = search.toLowerCase();
+        const s = search.toLowerCase().trim();
         const filtered: Record<ThreadStatus, PrivateEventRequest[]> = {};
+
+        // Format event_date for matching: "30 mei 2026", "mei 2026", "2026-05-30" etc.
+        const monthNames = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+        const monthShort = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+        function dateMatchesSearch(eventDate: string | null, query: string): boolean {
+          if (!eventDate) return false;
+          const d = new Date(eventDate + 'T00:00:00');
+          if (isNaN(d.getTime())) return false;
+          const day = d.getDate();
+          const month = d.getMonth();
+          const year = d.getFullYear();
+          // Match various date representations
+          const variants = [
+            eventDate,                                    // 2026-05-30
+            `${day} ${monthNames[month]} ${year}`,        // 30 mei 2026
+            `${day} ${monthShort[month]} ${year}`,        // 30 mei 2026
+            `${day} ${monthNames[month]}`,                // 30 mei
+            `${day} ${monthShort[month]}`,                // 30 mei
+            `${monthNames[month]} ${year}`,               // mei 2026
+            `${monthShort[month]} ${year}`,               // mei 2026
+            `${monthNames[month]}`,                       // mei
+            `${String(day).padStart(2,'0')}-${String(month+1).padStart(2,'0')}-${year}`, // 30-05-2026
+            `${day}-${month+1}-${year}`,                  // 30-5-2026
+          ];
+          return variants.some(v => v.toLowerCase().includes(query));
+        }
+
         for (const [status, items] of Object.entries(data.data)) {
           filtered[status as ThreadStatus] = (items as PrivateEventRequest[]).filter(e =>
             e.sender_name?.toLowerCase().includes(s) ||
-            e.sender_email.toLowerCase().includes(s) ||
-            e.occasion_type?.toLowerCase().includes(s)
+            e.sender_email?.toLowerCase().includes(s) ||
+            e.occasion_type?.toLowerCase().includes(s) ||
+            dateMatchesSearch(e.event_date, s)
           );
         }
         setEvents(filtered);

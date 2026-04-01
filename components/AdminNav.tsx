@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { RefreshCw, Settings, Moon, Sun, Search } from 'lucide-react';
+import { RefreshCw, Settings, Moon, Sun, Search, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Suspense, useState, useTransition, useEffect } from 'react';
+import { Suspense, useState, useTransition, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
@@ -22,6 +22,7 @@ function AdminNavInner() {
   useEffect(() => setMounted(true), []);
 
   const searchValue = searchParams.get('q') ?? '';
+  const inputRef = useRef<HTMLInputElement>(null);
 
   function handleSearch(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -33,6 +34,11 @@ function AdminNavInner() {
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     });
+  }
+
+  function clearSearch() {
+    if (inputRef.current) inputRef.current.value = '';
+    handleSearch('');
   }
 
   async function handleSync() {
@@ -77,17 +83,30 @@ function AdminNavInner() {
         <div className="relative flex-1 max-w-sm flex items-center">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
           <input
+            ref={inputRef}
             type="text"
             defaultValue={searchValue}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Zoek op naam, e-mail of onderwerp…"
-            className="w-full pl-8 pr-3 py-2 rounded-full text-sm border focus:outline-none focus:ring-2 transition-all"
+            placeholder="Zoek op naam of datum…"
+            className="w-full pl-8 pr-8 py-2 rounded-full text-sm border focus:outline-none focus:ring-2 transition-all"
             style={{
               background: 'var(--clr-surface-low)',
               borderColor: 'var(--clr-outline)',
               color: 'var(--clr-text)',
             }}
           />
+          {searchValue && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+              style={{ color: 'var(--clr-text-muted)', background: 'var(--clr-surface-variant)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--clr-text)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+              aria-label="Zoekopdracht wissen"
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
       )}
 
