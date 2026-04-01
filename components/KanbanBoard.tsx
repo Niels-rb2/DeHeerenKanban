@@ -266,12 +266,12 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
 
                 {/* Tab toggle */}
                 <div
-                  className="flex rounded-full p-1 gap-1"
+                  className="inline-flex rounded-full p-1 gap-1"
                   style={{ background: 'var(--clr-surface)' }}
                 >
                   <button
                     onClick={() => { setClosedTab('NO_GO'); setExpanded(false); }}
-                    className={`flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center border ${
+                    className={`py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap border ${
                       closedTab === 'NO_GO'
                         ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/40'
                         : 'border-transparent text-[var(--clr-text-muted)]'
@@ -290,7 +290,7 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                   </button>
                   <button
                     onClick={() => { setClosedTab('ARCHIVE'); setExpanded(false); }}
-                    className={`flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center border ${
+                    className={`py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap border ${
                       closedTab === 'ARCHIVE'
                         ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700/40'
                         : 'border-transparent text-[var(--clr-text-muted)]'
