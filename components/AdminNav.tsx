@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { RefreshCw, Settings, Moon, Sun, Search, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Suspense, useState, useTransition, useEffect, useRef } from 'react';
+import { Suspense, useState, useTransition, useEffect } from 'react';
 import { toast } from 'sonner';
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
@@ -21,10 +21,16 @@ function AdminNavInner() {
 
   useEffect(() => setMounted(true), []);
 
-  const searchValue = searchParams.get('q') ?? '';
-  const inputRef = useRef<HTMLInputElement>(null);
+  const searchParam = searchParams.get('q') ?? '';
+  const [searchInput, setSearchInput] = useState(searchParam);
+
+  // Sync local state when URL param changes externally
+  useEffect(() => {
+    setSearchInput(searchParam);
+  }, [searchParam]);
 
   function handleSearch(value: string) {
+    setSearchInput(value);
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
       params.set('q', value);
@@ -37,7 +43,6 @@ function AdminNavInner() {
   }
 
   function clearSearch() {
-    if (inputRef.current) inputRef.current.value = '';
     handleSearch('');
   }
 
@@ -83,9 +88,8 @@ function AdminNavInner() {
         <div className="relative flex-1 max-w-sm flex items-center">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
           <input
-            ref={inputRef}
             type="text"
-            defaultValue={searchValue}
+            value={searchInput}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Zoek op naam of datum…"
             className="w-full pl-8 pr-8 py-2 rounded-full text-sm border focus:outline-none focus:ring-2 transition-all"
@@ -95,7 +99,7 @@ function AdminNavInner() {
               color: 'var(--clr-text)',
             }}
           />
-          {searchValue && (
+          {searchInput && (
             <button
               onClick={clearSearch}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-colors cursor-pointer"
