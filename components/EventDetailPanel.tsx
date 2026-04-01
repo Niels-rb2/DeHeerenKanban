@@ -435,7 +435,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                 <div className="min-w-0">
                   <span className="text-xs font-medium" style={{ color: 'var(--clr-text-muted)' }}>{label}: </span>
                   {value ? (
-                    <span className="text-xs" style={{ color: 'var(--clr-text)' }}>{value}</span>
+                    <span className="text-xs" style={{ color: 'var(--clr-text)' }} suppressHydrationWarning>{value}</span>
                   ) : (
                     <span className="text-xs italic" style={{ color: 'var(--clr-text-subtle)' }}>Onbekend</span>
                   )}
