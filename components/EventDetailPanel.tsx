@@ -686,7 +686,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
               Geen berichten geladen
             </div>
           ) : (
-            (newestFirst ? [...messages].reverse() : [...messages]).map((msg) => {
+            (newestFirst ? [...messages] : [...messages].reverse()).map((msg) => {
               const isOut = msg.direction === 'OUTBOUND';
               const msgDate = new Date(msg.date);
               const dateStr = msgDate.toLocaleDateString('nl-NL', {
