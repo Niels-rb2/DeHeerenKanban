@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Café De Heeren – Feestje Dashboard',
   description: 'Beheer besloten feestje aanvragen via Gmail automatisering.',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/icon.svg' },
 };
 
 export const viewport: Viewport = {
