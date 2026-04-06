@@ -706,10 +706,10 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
       </div>
 
       {/* ═══ RIGHT — Email thread ══════════════ */}
-      <div className={`w-full lg:w-1/3 min-w-0 flex flex-col overflow-y-auto px-4 md:px-8 py-5 lg:border-l ${mobileTab === 'emails' ? '' : 'hidden lg:flex'}`} style={{ borderColor: 'var(--clr-outline)' }}>
+      <div className={`w-full lg:w-1/3 min-w-0 flex flex-col overflow-y-auto px-4 md:px-8 pt-3 pb-5 lg:py-5 lg:border-l ${mobileTab === 'emails' ? '' : 'hidden lg:flex'}`} style={{ borderColor: 'var(--clr-outline)' }}>
         {/* Mobile-only: logo + back + toggle (shown when emails tab is active) */}
-        <div className="lg:hidden mb-4">
-          <Link href="/dashboard" aria-label="Café De Heeren – feestjes" className="w-[120px] h-[48px] block mb-3">
+        <div className="lg:hidden mb-3">
+          <Link href="/dashboard" aria-label="Café De Heeren – feestjes" className="w-[120px] h-[48px] block mb-2">
             <Image src="/logo.svg" alt="Café De Heeren" width={160} height={64} priority className="w-full h-full object-contain" />
           </Link>
           <div className="flex items-center gap-3">
