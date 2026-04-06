@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         // Check if already synced
         const { data: existing } = await supabaseAdmin
           .from('private_event_requests')
-          .select('id, gmail_thread_id')
+          .select('id, gmail_thread_id, status, event_date')
           .eq('gmail_thread_id', gmailThread.id!)
           .maybeSingle();
 
@@ -157,10 +157,20 @@ export async function POST(req: NextRequest) {
               });
             }
 
-            await supabaseAdmin
-              .from('private_event_requests')
-              .update({ updated_at: new Date().toISOString() })
-              .eq('id', existing.id);
+            // Auto-move TO_ANSWER → ANSWERED when Café De Heeren replies
+            const hasNewOutbound = newMessages.some(m => m.direction === 'OUTBOUND');
+            if (hasNewOutbound && existing.status === 'TO_ANSWER') {
+              await supabaseAdmin
+                .from('private_event_requests')
+                .update({ status: 'ANSWERED', updated_at: new Date().toISOString() })
+                .eq('id', existing.id);
+              console.log(`[SYNC] Auto-moved ${existing.id} to ANSWERED (outbound reply detected)`);
+            } else {
+              await supabaseAdmin
+                .from('private_event_requests')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', existing.id);
+            }
 
             synced++;
           }
@@ -282,9 +292,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Auto-archive: events with event_date in the past ──
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const { data: pastEvents } = await supabaseAdmin
+      .from('private_event_requests')
+      .select('id')
+      .lt('event_date', today)
+      .not('status', 'in', '("ARCHIVE","NO_GO")');
+
+    let autoArchived = 0;
+    if (pastEvents && pastEvents.length > 0) {
+      const ids = pastEvents.map(e => e.id);
+      const { error: archiveError } = await supabaseAdmin
+        .from('private_event_requests')
+        .update({ status: 'ARCHIVE', archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .in('id', ids);
+
+      if (!archiveError) {
+        autoArchived = ids.length;
+        console.log(`[SYNC] Auto-archived ${autoArchived} events with past event_date`);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       synced,
+      autoArchived,
       totalThreads: gmailThreads.length,
       errors: errors.slice(0, 5),
       skipped: skipped.slice(0, 10),

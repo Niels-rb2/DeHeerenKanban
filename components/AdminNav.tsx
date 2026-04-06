@@ -30,7 +30,9 @@ function AdminNavInner() {
       const res = await fetch('/api/gmail/sync', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`${data.synced} gesprekken gesynchroniseerd`);
+        const parts = [`${data.synced} gesprekken gesynchroniseerd`];
+        if (data.autoArchived > 0) parts.push(`${data.autoArchived} automatisch gearchiveerd`);
+        toast.success(parts.join(' · '));
         router.refresh();
       } else {
         toast.error(data.error || 'Sync mislukt');
