@@ -342,3 +342,35 @@ html.dark .kanban-header-blue   { color: #93C5FD; }
 html.dark .kanban-header-green  { color: #86EFAC; }
 html.dark .kanban-header-red    { color: #FCA5A5; }
 html.dark .kanban-header-gray   { color: #D1D5DB; }
+
+/* ── Kanban responsive columns ─────────────── */
+/* Mobile: 1 column visible + ~33% of the next one */
+.kanban-col {
+  width: calc(75vw - 2rem);
+  min-width: 260px;
+  flex-shrink: 0;
+}
+
+/* Hide horizontal scrollbar on mobile for cleaner swipe */
+.kanban-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.kanban-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Desktop: 5 equal columns */
+@media (min-width: 768px) {
+  .kanban-col {
+    width: calc(20% - 13px);
+    min-width: 220px;
+  }
+  .kanban-scroll-container {
+    scrollbar-width: auto;
+  }
+  .kanban-scroll-container::-webkit-scrollbar {
+    display: block;
+    height: 4px;
+  }
+}

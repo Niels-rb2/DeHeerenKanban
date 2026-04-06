@@ -168,7 +168,7 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
   return (
     <>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollSnapType: 'x proximity' }}>
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory md:snap-none kanban-scroll-container">
           {/* ── Main columns (4) ────────────────────────── */}
           {MAIN_COLUMNS.map((col) => {
             const colEvents = byStatus(col.status);
@@ -179,13 +179,11 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0 transition-all duration-150"
+                    className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0 transition-all duration-150 kanban-col"
                     style={{
                       background: snapshot.isDraggingOver ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
                       borderLeft: `3px solid ${col.borderColor}`,
                       outline: snapshot.isDraggingOver ? `2px dashed ${col.borderColor}` : '2px solid transparent',
-                      width: 'calc(20% - 13px)',
-                      minWidth: '240px',
                       scrollSnapAlign: 'start',
                     }}
                   >
@@ -246,13 +244,11 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0 transition-all duration-150"
+                className="kanban-column rounded-2xl p-3 flex flex-col gap-3 shrink-0 transition-all duration-150 kanban-col"
                 style={{
                   background: snapshot.isDraggingOver ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
                   borderLeft: `3px solid ${CLOSED_BORDER}`,
                   outline: snapshot.isDraggingOver ? `2px dashed ${CLOSED_BORDER}` : '2px solid transparent',
-                  width: 'calc(20% - 13px)',
-                  minWidth: '240px',
                   scrollSnapAlign: 'start',
                 }}
               >

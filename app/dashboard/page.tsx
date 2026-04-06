@@ -189,12 +189,12 @@ function DashboardContent() {
 
       {/* Kanban board */}
       {loading ? (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory md:snap-none kanban-scroll-container">
+          {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="kanban-column rounded-2xl animate-pulse shrink-0"
-              style={{ background: 'var(--clr-surface-low)', height: 400, width: 'calc(16.666% - 13px)', minWidth: '240px' }}
+              className="kanban-column kanban-col rounded-2xl animate-pulse shrink-0"
+              style={{ background: 'var(--clr-surface-low)', height: 400, scrollSnapAlign: 'start' }}
             />
           ))}
         </div>
