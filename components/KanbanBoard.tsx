@@ -173,6 +173,9 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
           {MAIN_COLUMNS.map((col) => {
             const colEvents = byStatus(col.status);
 
+            // Hide 'Nog te antwoorden' when empty
+            if (col.status === 'TO_ANSWER' && colEvents.length === 0) return null;
+
             return (
               <Droppable droppableId={col.status} key={col.status} type="EVENT">
                 {(provided, snapshot) => (
