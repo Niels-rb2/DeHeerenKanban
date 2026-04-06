@@ -91,7 +91,7 @@ function AdminNavInner() {
         )}
 
         {/* Spacer */}
-        <div className="flex-1 md:flex-none" />
+        <div className="flex-1" />
 
         {/* Action buttons — rechts uitgelijnd */}
         {onDashboard && (
