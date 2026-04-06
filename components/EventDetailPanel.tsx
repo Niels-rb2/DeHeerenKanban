@@ -348,9 +348,9 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
+    <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6 min-h-dvh lg:h-dvh lg:overflow-hidden">
       {/* ═══ LEFT — Event details ═════════════════ */}
-      <div className={`w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto lg:pr-8 pb-5 ${mobileTab === 'specificaties' ? '' : 'hidden lg:flex'}`}>
+      <div className={`w-full lg:w-2/3 shrink-0 flex flex-col gap-4 lg:overflow-y-auto lg:pr-8 pb-5 ${mobileTab === 'specificaties' ? '' : 'hidden lg:flex'}`}>
         {/* Logo */}
         <div className="px-4 pt-3 md:px-5">
           <Link href="/dashboard" aria-label="Café De Heeren – feestjes" className="w-[120px] h-[48px] md:w-[160px] md:h-[64px] block">
