@@ -298,7 +298,7 @@ export async function POST(req: NextRequest) {
       .from('private_event_requests')
       .select('id')
       .lt('event_date', today)
-      .not('status', 'in', '("ARCHIVE","NO_GO")');
+      .in('status', ['TO_ANSWER', 'ANSWERED', 'CONSULTATION_PLANNED', 'GO']);
 
     let autoArchived = 0;
     if (pastEvents && pastEvents.length > 0) {

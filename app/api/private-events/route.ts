@@ -80,11 +80,28 @@ export async function GET(request: Request) {
   try {
     // Auto-archive events with event_date in the past
     const today = new Date().toISOString().split('T')[0];
-    await supabaseAdmin
+    // First find which events need archiving
+    const { data: pastEvents, error: findError } = await supabaseAdmin
       .from('private_event_requests')
-      .update({ status: 'ARCHIVE', archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .select('id, event_date, status')
       .lt('event_date', today)
-      .not('status', 'in', '("ARCHIVE","NO_GO")');
+      .in('status', ['TO_ANSWER', 'ANSWERED', 'CONSULTATION_PLANNED', 'GO']);
+
+    if (findError) {
+      console.error('[AUTO-ARCHIVE] Find error:', findError);
+    } else if (pastEvents && pastEvents.length > 0) {
+      console.log(`[AUTO-ARCHIVE] Found ${pastEvents.length} past events to archive:`, pastEvents.map(e => ({ id: e.id, date: e.event_date, status: e.status })));
+      const ids = pastEvents.map(e => e.id);
+      const { error: updateError } = await supabaseAdmin
+        .from('private_event_requests')
+        .update({ status: 'ARCHIVE', archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .in('id', ids);
+      if (updateError) {
+        console.error('[AUTO-ARCHIVE] Update error:', updateError);
+      } else {
+        console.log(`[AUTO-ARCHIVE] Archived ${ids.length} events`);
+      }
+    }
 
     const { data, error } = await supabaseAdmin
       .from('private_event_requests')
