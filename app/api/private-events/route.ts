@@ -78,6 +78,14 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Auto-archive events with event_date in the past
+    const today = new Date().toISOString().split('T')[0];
+    await supabaseAdmin
+      .from('private_event_requests')
+      .update({ status: 'ARCHIVE', archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .lt('event_date', today)
+      .not('status', 'in', '("ARCHIVE","NO_GO")');
+
     const { data, error } = await supabaseAdmin
       .from('private_event_requests')
       .select('*')
