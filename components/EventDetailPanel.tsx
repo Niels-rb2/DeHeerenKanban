@@ -269,6 +269,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   const [status, setStatus] = useState<ThreadStatus>(event.status);
   const [reanalyzing, setReanalyzing] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'specificaties' | 'emails'>('specificaties');
 
   // Editable fields
   const [eventDate, setEventDate] = useState(event.event_date || '');
@@ -349,15 +350,19 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   return (
     <div className="flex flex-col lg:flex-row -mx-4 md:-mx-6 -mb-4 md:-mb-6" style={{ height: '100dvh', overflow: 'hidden' }}>
       {/* ═══ LEFT — Event details ═════════════════ */}
-      <div className="w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto pr-8 pb-5">
-        {/* Logo + back button */}
-        <div className="flex flex-col items-start gap-0">
-          <Link href="/dashboard" aria-label="Café De Heeren – feestjes" className="w-[160px] h-[64px] m-5 block">
+      <div className={`w-full lg:w-2/3 shrink-0 flex flex-col gap-4 overflow-y-auto lg:pr-8 pb-5 ${mobileTab === 'specificaties' ? '' : 'hidden lg:flex'}`}>
+        {/* Logo */}
+        <div className="px-4 pt-3 md:px-5">
+          <Link href="/dashboard" aria-label="Café De Heeren – feestjes" className="w-[120px] h-[48px] md:w-[160px] md:h-[64px] block">
             <Image src="/logo.svg" alt="Café De Heeren" width={160} height={64} priority className="w-full h-full object-contain" />
           </Link>
+        </div>
+
+        {/* Back button + mobile tab toggle */}
+        <div className="flex items-center gap-3 px-4 md:px-5 mb-1">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors mb-5 ml-5"
+            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors shrink-0"
             style={{
               background: 'var(--clr-surface-low)',
               border: '1px solid var(--clr-outline-dim)',
@@ -367,10 +372,39 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             <ChevronLeft size={14} />
             Feestjes
           </Link>
+
+          {/* Mobile tab toggle — hidden on desktop */}
+          <div
+            className="flex rounded-full p-1 gap-1 flex-1 lg:hidden"
+            style={{ background: 'var(--clr-surface-low)' }}
+          >
+            <button
+              onClick={() => setMobileTab('specificaties')}
+              className="flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap"
+              style={{
+                background: mobileTab === 'specificaties' ? 'var(--clr-surface)' : 'transparent',
+                color: mobileTab === 'specificaties' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+                boxShadow: mobileTab === 'specificaties' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              }}
+            >
+              Specificaties
+            </button>
+            <button
+              onClick={() => setMobileTab('emails')}
+              className="flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap"
+              style={{
+                background: mobileTab === 'emails' ? 'var(--clr-surface)' : 'transparent',
+                color: mobileTab === 'emails' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+                boxShadow: mobileTab === 'emails' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              }}
+            >
+              E-mails
+            </button>
+          </div>
         </div>
 
         {/* Title block */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1 px-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-1 px-4 md:px-5">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold leading-tight" style={{ color: 'var(--clr-text)' }}>
               {event.sender_name || event.sender_email}
@@ -408,7 +442,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
         </div>
 
         {/* AI Summary */}
-        <div className="bento-card ml-5 mr-5">
+        <div className="bento-card mx-4 md:mx-5">
           <div className="flex items-center justify-between mb-3">
             <SectionLabel icon={Info} label="Feestje samenvatting" />
           </div>
@@ -497,7 +531,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
 
         {/* Special notes */}
         {event.special_notes && (
-          <div className="bento-card ml-5 mr-5" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
+          <div className="bento-card mx-4 md:mx-5" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
             <SectionLabel icon={StickyNote} label="Bijzonderheden" />
             {event.special_notes.includes('\n') || event.special_notes.includes('•') ? (
               <ul className="space-y-1.5">
@@ -524,11 +558,11 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
         )}
 
         {/* Event details card - editable form */}
-        <div className="bento-card ml-5 mr-5" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
+        <div className="bento-card mx-4 md:mx-5" style={{ background: 'var(--clr-surface-low)', boxShadow: 'none', border: '1px solid var(--clr-outline)' }}>
           <SectionLabel icon={Calendar} label="Details" />
           <div className="space-y-3">
             {/* Datum feestje | Reden feestje | Aantal personen */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Field label="Datum feestje">
                 <input
                   type="date"
@@ -672,10 +706,58 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
       </div>
 
       {/* ═══ RIGHT — Email thread ══════════════ */}
-      <div className="w-full lg:w-1/3 min-w-0 flex flex-col overflow-y-auto px-8 py-5 border-l" style={{ borderColor: 'var(--clr-outline)' }}>
+      <div className={`w-full lg:w-1/3 min-w-0 flex flex-col overflow-y-auto px-4 md:px-8 py-5 lg:border-l ${mobileTab === 'emails' ? '' : 'hidden lg:flex'}`} style={{ borderColor: 'var(--clr-outline)' }}>
+        {/* Mobile-only: logo + back + toggle (shown when emails tab is active) */}
+        <div className="lg:hidden mb-4">
+          <Link href="/dashboard" aria-label="Café De Heeren – feestjes" className="w-[120px] h-[48px] block mb-3">
+            <Image src="/logo.svg" alt="Café De Heeren" width={160} height={64} priority className="w-full h-full object-contain" />
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-3 py-1.5 transition-colors shrink-0"
+              style={{
+                background: 'var(--clr-surface-low)',
+                border: '1px solid var(--clr-outline-dim)',
+                color: 'var(--clr-text-dim)',
+              }}
+            >
+              <ChevronLeft size={14} />
+              Feestjes
+            </Link>
+            <div
+              className="flex rounded-full p-1 gap-1 flex-1"
+              style={{ background: 'var(--clr-surface-low)' }}
+            >
+              <button
+                onClick={() => setMobileTab('specificaties')}
+                className="flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap"
+                style={{
+                  background: mobileTab === 'specificaties' ? 'var(--clr-surface)' : 'transparent',
+                  color: mobileTab === 'specificaties' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+                  boxShadow: mobileTab === 'specificaties' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                Specificaties
+              </button>
+              <button
+                onClick={() => setMobileTab('emails')}
+                className="flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap"
+                style={{
+                  background: mobileTab === 'emails' ? 'var(--clr-surface)' : 'transparent',
+                  color: mobileTab === 'emails' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
+                  boxShadow: mobileTab === 'emails' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                E-mails
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Chat header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold" style={{ color: 'var(--clr-text)' }}>
+          <h2 className="text-xl lg:text-2xl font-semibold" style={{ color: 'var(--clr-text)' }}>
             E-mailwisseling
           </h2>
           <span className="text-xs" style={{ color: 'var(--clr-text-muted)' }}>
