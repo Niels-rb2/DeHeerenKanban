@@ -52,15 +52,46 @@ function AdminNavInner() {
       className="sticky top-0 z-40 border-b"
       style={{ backgroundColor: 'var(--clr-bg)', borderColor: 'var(--clr-outline)' }}
     >
-      {/* Row 1: Logo + action buttons */}
+      {/* Row 1: Logo + (desktop: search) + action buttons */}
       <div className="flex items-center gap-2 px-4 py-3 md:px-6">
         {/* Logo */}
         <Link href="/dashboard" aria-label="Café De Heeren – home" className="shrink-0 w-[120px] h-[48px] md:w-[160px] md:h-[64px] block">
           <Image src="/logo.svg" alt="Café De Heeren" width={160} height={64} priority className="w-full h-full object-contain" />
         </Link>
 
+        {/* Desktop search — naast logo, verborgen op mobiel */}
+        {onDashboard && (
+          <div className="relative hidden md:flex flex-1 max-w-sm items-center">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Zoek op naam of datum…"
+              className="w-full pl-8 pr-8 py-2 rounded-full text-sm border focus:outline-none focus:ring-2 transition-all"
+              style={{
+                background: 'var(--clr-surface-low)',
+                borderColor: 'var(--clr-outline)',
+                color: 'var(--clr-text)',
+              }}
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+                style={{ color: 'var(--clr-text-muted)', background: 'var(--clr-surface-variant)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--clr-text)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+                aria-label="Zoekopdracht wissen"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Spacer */}
-        <div className="flex-1" />
+        <div className="flex-1 md:flex-none" />
 
         {/* Action buttons — rechts uitgelijnd */}
         {onDashboard && (
@@ -112,9 +143,9 @@ function AdminNavInner() {
         </>}
       </div>
 
-      {/* Row 2: Search bar — volledige breedte, alleen op dashboard */}
+      {/* Row 2: Mobile-only search bar — volledige breedte */}
       {onDashboard && (
-        <div className="px-4 pb-3 md:px-6">
+        <div className="px-4 pb-3 md:hidden">
           <div className="relative flex items-center">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--clr-text-subtle)' }} />
             <input
