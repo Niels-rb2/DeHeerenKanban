@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   if (result.confidence > 0.7) {
     updateData.status = result.statusHint;
-    updateData.conversion = result.hasAppointment && result.statusHint === 'APPOINTMENT_SET';
+    updateData.conversion = result.hasAppointment && result.statusHint === 'GO';
   }
 
   await supabaseAdmin.from('threads').update(updateData).eq('id', threadId);

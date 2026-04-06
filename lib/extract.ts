@@ -33,17 +33,17 @@ Geef ALLEEN dit JSON terug, geen uitleg:
     "occasion": "verjaardag|receptie|borrel|diner|trouwerij|anders of null",
     "notes": "string of null"
   },
-  "statusHint": "TODO_REPLY|REPLIED_NO_APPOINTMENT|APPOINTMENT_SET|CANCELLED",
+  "statusHint": "TO_ANSWER|ANSWERED|CONSULTATION_PLANNED|GO|NO_GO",
   "confidence": 0.0-1.0,
   "keyEvidence": ["max 3 korte citaten"]
 }
 
 Regels:
 - hasAppointment = true als er een datum OF bevestiging is ("staat in agenda", "we hebben gereserveerd", "bevestigd", "afgesproken")
-- statusHint = CANCELLED als "gaat niet door", "annuleren", "toch niet", "afzeggen", "zeg af"
-- statusHint = APPOINTMENT_SET als hasAppointment = true
-- statusHint = REPLIED_NO_APPOINTMENT als café al geantwoord heeft maar nog geen afspraak
-- statusHint = TODO_REPLY als laatste bericht van klant is en café nog niet geantwoord heeft
+- statusHint = NO_GO als "gaat niet door", "annuleren", "toch niet", "afzeggen", "zeg af"
+- statusHint = GO als hasAppointment = true
+- statusHint = ANSWERED als café al geantwoord heeft maar nog geen afspraak
+- statusHint = TO_ANSWER als laatste bericht van klant is en café nog niet geantwoord heeft
 - Zet relatieve data (vrijdag, volgende week) om naar absolute datum
 - Verwerk Nederlandse datumnotaties: "8 feb", "a.s. donderdag", "vrijdag 15 maart"`;
 
@@ -62,7 +62,7 @@ Regels:
     return {
       hasAppointment: false,
       appointment: { date: null, time: null, partySize: null, occasion: null, notes: null },
-      statusHint: 'TODO_REPLY',
+      statusHint: 'TO_ANSWER',
       confidence: 0,
       keyEvidence: [],
     };

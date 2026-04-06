@@ -35,7 +35,7 @@ export interface ThreadMessage {
 
 export interface ExtractedThreadData extends ExtractedEventData {
   senderEmail: string | null;
-  statusHint: 'TO_ANSWER' | 'ANSWERED' | 'CONSULTATION_PLANNED' | 'GO' | 'NO_GO';
+  statusHint: 'TO_ANSWER' | 'ANSWERED' | 'CONSULTATION_PLANNED' | 'GO' | 'NO_GO' | 'ARCHIVE';
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -16,10 +16,11 @@ import { useTheme } from '@/components/ThemeProvider';
 import Link from 'next/link';
 
 const STATUS_OPTIONS: ThreadStatus[] = [
-  'TODO_REPLY',
-  'REPLIED_NO_APPOINTMENT',
-  'APPOINTMENT_SET',
-  'CANCELLED',
+  'TO_ANSWER',
+  'ANSWERED',
+  'CONSULTATION_PLANNED',
+  'GO',
+  'NO_GO',
   'ARCHIVE',
 ];
 
