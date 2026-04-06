@@ -67,7 +67,7 @@ const DROPPABLE_CLOSED = 'CLOSED';
 
 export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
   const [events, setEvents] = useState(initialEvents);
-  const [closedTab, setClosedTab] = useState<'NO_GO' | 'ARCHIVE'>('NO_GO');
+  const [closedTab, setClosedTab] = useState<'NO_GO' | 'ARCHIVE'>('ARCHIVE');
   const [expanded, setExpanded] = useState(false);
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null);
 
@@ -266,25 +266,6 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                   style={{ background: 'var(--clr-surface)' }}
                 >
                   <button
-                    onClick={() => { setClosedTab('NO_GO'); setExpanded(false); }}
-                    className={`py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap border ${
-                      closedTab === 'NO_GO'
-                        ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/40'
-                        : 'border-transparent text-[var(--clr-text-muted)]'
-                    }`}
-                  >
-                    Gaat niet door
-                    <span
-                      className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold ${
-                        closedTab === 'NO_GO'
-                          ? 'bg-red-800 text-white dark:bg-red-300 dark:text-red-950'
-                          : 'bg-[var(--clr-surface-low)] text-[var(--clr-text-subtle)]'
-                      }`}
-                    >
-                      {noGoCount}
-                    </span>
-                  </button>
-                  <button
                     onClick={() => { setClosedTab('ARCHIVE'); setExpanded(false); }}
                     className={`flex-1 py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap border ${
                       closedTab === 'ARCHIVE'
@@ -301,6 +282,25 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                       }`}
                     >
                       {archiveCount}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => { setClosedTab('NO_GO'); setExpanded(false); }}
+                    className={`py-1.5 px-3 rounded-full text-xs font-semibold transition-all cursor-pointer text-center whitespace-nowrap border ${
+                      closedTab === 'NO_GO'
+                        ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/40'
+                        : 'border-transparent text-[var(--clr-text-muted)]'
+                    }`}
+                  >
+                    Gaat niet door
+                    <span
+                      className={`ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold ${
+                        closedTab === 'NO_GO'
+                          ? 'bg-red-800 text-white dark:bg-red-300 dark:text-red-950'
+                          : 'bg-[var(--clr-surface-low)] text-[var(--clr-text-subtle)]'
+                      }`}
+                    >
+                      {noGoCount}
                     </span>
                   </button>
                 </div>
