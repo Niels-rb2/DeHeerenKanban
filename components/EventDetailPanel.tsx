@@ -480,11 +480,11 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   <Circle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--clr-text-subtle)' }} />
                 )}
                 <div className="min-w-0">
-                  <span className="text-xs font-medium" style={{ color: 'var(--clr-text-muted)' }}>{label}: </span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--clr-text-muted)' }}>{label}: </span>
                   {value ? (
-                    <span className="text-xs" style={{ color: 'var(--clr-text)' }} suppressHydrationWarning>{value}</span>
+                    <span className="text-sm" style={{ color: 'var(--clr-text)' }} suppressHydrationWarning>{value}</span>
                   ) : (
-                    <span className="text-xs italic" style={{ color: 'var(--clr-text-subtle)' }}>Onbekend</span>
+                    <span className="text-sm italic" style={{ color: 'var(--clr-text-subtle)' }}>Onbekend</span>
                   )}
                 </div>
               </li>
@@ -503,7 +503,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     // Strip leading bullet chars (•, -, *)
                     const text = line.replace(/^[•\-\*]\s*/, '');
                     return (
-                      <li key={i} className="flex items-start gap-2 text-xs" style={{ color: 'var(--clr-text-dim)' }}>
+                      <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--clr-text-dim)' }}>
                         <span className="shrink-0 mt-0.5" style={{ color: 'var(--clr-text-subtle)' }}>•</span>
                         <span>{text}</span>
                       </li>
@@ -542,7 +542,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   .map((line, i) => {
                     const text = line.replace(/^[•\-\*]\s*/, '');
                     return (
-                      <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--clr-text)' }}>
+                      <li key={i} className="flex items-start gap-2 text-base" style={{ color: 'var(--clr-text)' }}>
                         <span className="shrink-0 mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>•</span>
                         <span>{text}</span>
                       </li>
@@ -550,7 +550,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   })}
               </ul>
             ) : (
-              <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
+              <p className="text-base" style={{ color: 'var(--clr-text)' }}>
                 {event.special_notes}
               </p>
             )}
@@ -564,17 +564,21 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             {/* Datum feestje | Reden feestje | Aantal personen */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Field label="Datum feestje">
-                <input
-                  type="date"
-                  value={eventDate ? eventDate.split('T')[0] : ''}
-                  onChange={(e) => setEventDate(e.target.value ? new Date(e.target.value).toISOString() : '')}
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
-                  style={{
-                    background: 'var(--clr-input)',
-                    borderColor: 'var(--clr-input-border)',
-                    color: 'var(--clr-text)',
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={eventDate ? eventDate.split('T')[0] : ''}
+                    onChange={(e) => setEventDate(e.target.value ? new Date(e.target.value).toISOString() : '')}
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
+                    style={{
+                      background: 'var(--clr-input)',
+                      borderColor: 'var(--clr-input-border)',
+                      color: 'var(--clr-text)',
+                    }}
+                  />
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: 'var(--clr-text-muted)' }} />
+                </div>
               </Field>
 
               <Field label="Reden feestje">
@@ -582,7 +586,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   <select
                     value={occasionType}
                     onChange={(e) => setOccasionType(e.target.value)}
-                    className="w-full px-3 py-2 pr-8 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
                     style={{
                       background: 'var(--clr-input)',
                       borderColor: 'var(--clr-input-border)',
@@ -604,7 +608,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     <option value="themafeest">🎭 Themafeest</option>
                     <option value="anders">🎉 Anders</option>
                   </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                     style={{ color: 'var(--clr-text-muted)' }} />
                 </div>
               </Field>
@@ -614,7 +618,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   type="number"
                   value={guestCount}
                   onChange={(e) => setGuestCount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                  className="w-full px-3 py-2 rounded-lg text-base border focus:outline-none focus:ring-2"
                   style={{
                     background: 'var(--clr-input)',
                     borderColor: 'var(--clr-input-border)',
@@ -627,30 +631,38 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             {/* Begintijd - Eindtijd */}
             <div className="grid grid-cols-2 gap-2">
               <Field label="Begintijd">
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
-                  style={{
-                    background: 'var(--clr-input)',
-                    borderColor: 'var(--clr-input-border)',
-                    color: 'var(--clr-text)',
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
+                    style={{
+                      background: 'var(--clr-input)',
+                      borderColor: 'var(--clr-input-border)',
+                      color: 'var(--clr-text)',
+                    }}
+                  />
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: 'var(--clr-text-muted)' }} />
+                </div>
               </Field>
               <Field label="Eindtijd">
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
-                  style={{
-                    background: 'var(--clr-input)',
-                    borderColor: 'var(--clr-input-border)',
-                    color: 'var(--clr-text)',
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
+                    style={{
+                      background: 'var(--clr-input)',
+                      borderColor: 'var(--clr-input-border)',
+                      color: 'var(--clr-text)',
+                    }}
+                  />
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: 'var(--clr-text-muted)' }} />
+                </div>
               </Field>
             </div>
 
@@ -670,7 +682,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   e.target.style.height = e.target.scrollHeight + 'px';
                 }}
                 rows={1}
-                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 resize-none overflow-hidden"
+                className="w-full px-3 py-2 rounded-lg text-base border focus:outline-none focus:ring-2 resize-none overflow-hidden"
                 style={{
                   background: 'var(--clr-input)',
                   borderColor: 'var(--clr-input-border)',
@@ -682,10 +694,10 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             {/* Contact info (read-only) */}
             <div className="pt-2 border-t" style={{ borderColor: 'var(--clr-outline)' }}>
               <Field label="E-mailadres">
-                <p className="text-sm" style={{ color: 'var(--clr-text)' }}>{event.sender_email}</p>
+                <p className="text-base" style={{ color: 'var(--clr-text)' }}>{event.sender_email}</p>
               </Field>
               <Field label="Ontvangen">
-                <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
+                <p className="text-base" style={{ color: 'var(--clr-text)' }}>
                   {new Date(event.created_at).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </Field>

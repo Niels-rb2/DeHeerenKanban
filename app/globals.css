@@ -343,6 +343,18 @@ html.dark .kanban-header-green  { color: #86EFAC; }
 html.dark .kanban-header-red    { color: #FCA5A5; }
 html.dark .kanban-header-gray   { color: #D1D5DB; }
 
+/* ── Hide native date/time picker icons (use custom chevron) ── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
 /* ── Kanban responsive columns ─────────────── */
 /* Mobile: 1 column visible + ~33% of the next one */
 .kanban-col {
