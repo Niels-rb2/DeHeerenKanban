@@ -4,6 +4,7 @@ import { AdminNav } from '@/components/AdminNav';
 import { ClientToaster } from '@/components/ClientToaster';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SearchProvider } from '@/lib/search-context';
+import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import './globals.css';
 
 const bricolage = Bricolage_Grotesque({
@@ -20,13 +21,32 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Café De Heeren – Feestje Dashboard',
-  description: 'Beheer besloten feestje aanvragen via Gmail automatisering.',
-  icons: { icon: { url: '/icon.svg', type: 'image/svg+xml' } },
+  description: 'Beheer besloten feestje aanvragen voor Café De Heeren',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Feestjes',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FAF7F4' },
+    { media: '(prefers-color-scheme: dark)', color: '#131110' },
+  ],
 };
 
 export default function RootLayout({
@@ -55,6 +75,7 @@ export default function RootLayout({
             </main>
 
             <ClientToaster />
+            <ServiceWorkerRegister />
           </SearchProvider>
         </ThemeProvider>
       </body>
