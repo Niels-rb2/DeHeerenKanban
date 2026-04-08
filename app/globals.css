@@ -372,11 +372,12 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   display: none;
 }
 
-/* Desktop: 5 equal columns */
+/* Desktop: columns fill available space equally */
 @media (min-width: 768px) {
   .kanban-col {
-    width: calc(20% - 13px);
-    min-width: 220px;
+    flex: 1 1 0%;
+    width: auto;
+    min-width: 200px;
   }
   .kanban-scroll-container {
     scrollbar-width: auto;
