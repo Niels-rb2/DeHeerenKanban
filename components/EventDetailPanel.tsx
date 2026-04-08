@@ -150,18 +150,15 @@ function cleanHtmlForDisplay(html: string): string {
     cleaned = cleaned.replace(pattern, '');
   }
 
-  // ── Clean up styles ───────────────────────────────────────────
-  // Remove inline font-family/font-size styles but keep bold/italic
-  cleaned = cleaned.replace(/\s*style="[^"]*?font-family:[^"]*?"/gi, (match) => {
-    if (/font-weight:\s*bold/i.test(match) || /font-style:\s*italic/i.test(match)) {
-      return match;
-    }
-    return '';
-  });
+  // ── Strip ALL inline styles (removes height/padding/margin that cause gaps) ──
+  cleaned = cleaned.replace(/\s*style="[^"]*"/gi, '');
 
   // Remove clutter IDs
-  cleaned = cleaned.replace(/\s*id="bloop_customfont"/gi, '');
-  cleaned = cleaned.replace(/\s*id="docs-internal-guid-[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s*id="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s*class="[^"]*"/gi, '');
+
+  // Remove table layout elements entirely (keep their text content via DOMPurify)
+  cleaned = cleaned.replace(/<\/?(table|tbody|thead|tfoot|tr|td|th|col|colgroup|caption)[^>]*>/gi, '');
 
   // Sanitize with DOMPurify - allow basic formatting tags
   let sanitized = DOMPurify.sanitize(cleaned, {
