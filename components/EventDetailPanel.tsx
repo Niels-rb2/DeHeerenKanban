@@ -19,12 +19,22 @@ import { toast } from 'sonner';
 function cleanMessageForDisplay(body: string): string {
   if (!body) return '';
 
-  const lines = body.split('\n');
+  // Strip Framer boilerplate lines before processing
+  let preprocessed = body
+    .replace(/The form on your website just received a new submission!\s*/gi, '')
+    .replace(/Je hebt de volgende aanvraag ontvangen via de website:\s*/gi, '');
+
+  const lines = preprocessed.split('\n');
   const cleaned: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
+
+    // Stop at Framer footer
+    if (/^This email is a submission/i.test(trimmed)) break;
+    if (/^Not expecting this email/i.test(trimmed)) break;
+    if (/support@framer\.com/i.test(trimmed)) break;
 
     // Stop at quoted lines (> prefix)
     if (trimmed.startsWith('>')) break;
