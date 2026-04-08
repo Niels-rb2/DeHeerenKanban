@@ -1,12 +1,17 @@
 export default function SettingsPage() {
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--clr-text)' }}>
-        Instellingen
-      </h1>
-      <p className="text-sm mb-8" style={{ color: 'var(--clr-text-muted)' }}>
-        Configureer het Feestje Dashboard.
-      </p>
+      <div className="mb-6 mt-4">
+        <p className="text-xs uppercase tracking-widest font-medium mb-1" style={{ color: 'var(--clr-text-muted)' }}>
+          Configuratie
+        </p>
+        <h1
+          className="text-2xl md:text-[2.5rem] font-medium leading-none"
+          style={{ color: 'var(--clr-text)' }}
+        >
+          Instellingen
+        </h1>
+      </div>
 
       <div className="space-y-4">
         <div className="bento-card rounded-2xl">
