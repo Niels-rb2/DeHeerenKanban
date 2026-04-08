@@ -46,7 +46,8 @@ function AdminNavInner() {
   }
 
   const onDashboard = pathname === '/dashboard';
-  const onDetailPage = pathname.startsWith('/thread/') || /^\/dashboard\/[\w-]+$/.test(pathname);
+  const onSettingsPage = pathname === '/dashboard/settings';
+  const onDetailPage = !onSettingsPage && (pathname.startsWith('/thread/') || /^\/dashboard\/[\w-]+$/.test(pathname));
 
   if (onDetailPage) return null;
 
