@@ -167,21 +167,27 @@ function cleanHtmlForDisplay(html: string): string {
     ADD_ATTR: ['target'],
   });
 
+  // Replace &nbsp; and &#160; with regular spaces for easier cleanup
+  sanitized = sanitized.replace(/&nbsp;/gi, ' ').replace(/&#160;/gi, ' ');
+  // Replace actual non-breaking space characters
+  sanitized = sanitized.replace(/\u00A0/g, ' ');
+
   // ── Collapse whitespace (run multiple passes for nested empties) ──
   let prev = '';
   while (prev !== sanitized) {
     prev = sanitized;
-    // Remove empty tags: <p></p>, <div></div>, <span></span>, etc.
-    sanitized = sanitized.replace(/<(p|div|span|h[1-3])[^>]*>\s*<\/\1>/gi, '');
-    // Remove tags that only contain <br> or &nbsp;
-    sanitized = sanitized.replace(/<(p|div|span)[^>]*>\s*(?:<br\s*\/?>|\s|&nbsp;)*\s*<\/\1>/gi, '');
+    // Remove tags that only contain whitespace, <br>, or nothing
+    sanitized = sanitized.replace(/<(p|div|span|h[1-3])[^>]*>[\s]*<\/\1>/gi, '');
+    sanitized = sanitized.replace(/<(p|div|span)[^>]*>[\s]*(?:<br\s*\/?>[\s]*)*[\s]*<\/\1>/gi, '');
   }
   // Collapse 3+ consecutive <br> into max 2
   sanitized = sanitized.replace(/(<br\s*\/?\s*>[\s]*){3,}/gi, '<br><br>');
-  // Remove leading <br> tags
-  sanitized = sanitized.replace(/^(\s*<br\s*\/?\s*>\s*)+/i, '');
-  // Remove trailing <br> tags
-  sanitized = sanitized.replace(/(\s*<br\s*\/?\s*>\s*)+$/i, '');
+  // Remove leading whitespace and <br> tags
+  sanitized = sanitized.replace(/^[\s]*(<br\s*\/?\s*>[\s]*)*/i, '');
+  // Remove trailing whitespace and <br> tags
+  sanitized = sanitized.replace(/([\s]*<br\s*\/?\s*>)*[\s]*$/i, '');
+  // Final trim
+  sanitized = sanitized.trim();
 
   // Add target="_blank" to all links
   return sanitized.replace(/<a\s/gi, '<a target="_blank" rel="noopener noreferrer" ');
