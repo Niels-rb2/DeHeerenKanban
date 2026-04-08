@@ -162,7 +162,15 @@ function DashboardContent() {
   useEffect(() => {
     fetchEvents();
     const interval = setInterval(fetchEvents, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+
+    // Re-fetch when Gmail sync completes
+    const onSync = () => fetchEvents();
+    window.addEventListener('gmail-sync-complete', onSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('gmail-sync-complete', onSync);
+    };
   }, [fetchEvents]);
 
   return (

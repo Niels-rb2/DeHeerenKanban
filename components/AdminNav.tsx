@@ -33,6 +33,7 @@ function AdminNavInner() {
         const parts = [`${data.synced} gesprekken gesynchroniseerd`];
         if (data.autoArchived > 0) parts.push(`${data.autoArchived} automatisch gearchiveerd`);
         toast.success(parts.join(' · '));
+        window.dispatchEvent(new Event('gmail-sync-complete'));
         router.refresh();
       } else {
         toast.error(data.error || 'Sync mislukt');
