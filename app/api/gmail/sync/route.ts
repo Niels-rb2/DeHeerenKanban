@@ -138,6 +138,8 @@ export async function POST(req: NextRequest) {
           };
         });
 
+        console.log(`[SYNC] Thread ${gmailThread.id}: ${messages.length} messages, existing=${!!existing}`);
+
         if (existing) {
           // ── Re-sync: insert only NEW messages for existing thread ──
           const { data: existingMessages } = await supabaseAdmin
@@ -193,9 +195,12 @@ export async function POST(req: NextRequest) {
         let senderEmail = '';
         let requestBody = '';
 
+        console.log(`[SYNC] Thread ${gmailThread.id}: framer=${!!framerMsg}, customerReply=${!!customerReply}, directions=${parsedMessages.map(m => m.direction).join(',')}, from=${parsedMessages.map(m => m.from_email).join(',')}`);
+
         if (framerMsg) {
           // Parse customer details from Framer HTML
           const parsed = parseFramerNotification(framerMsg.body_html || '');
+          console.log(`[SYNC] Framer parsed:`, JSON.stringify(parsed));
 
           senderName = [parsed.firstName, parsed.lastName].filter(Boolean).join(' ') || '';
           senderEmail = parsed.email || '';
@@ -223,6 +228,8 @@ export async function POST(req: NextRequest) {
           skipped.push(`${gmailThread.id}: no inbound (${dirs})`);
           continue;
         }
+
+        console.log(`[SYNC] Thread ${gmailThread.id}: senderName=${senderName}, senderEmail=${senderEmail}, requestBody=${requestBody?.substring(0, 100)}`);
 
         if (!senderEmail) {
           skipped.push(`${gmailThread.id}: no email found (framer=${!!framerMsg}, customer=${!!customerReply}, name=${senderName})`);
