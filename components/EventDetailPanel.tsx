@@ -95,6 +95,15 @@ function cleanHtmlForDisplay(html: string): string {
   // Remove <style> blocks
   let cleaned = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
 
+  // Remove <img> tags (logos, spacers, tracking pixels)
+  cleaned = cleaned.replace(/<img[^>]*>/gi, '');
+
+  // Strip Framer boilerplate text
+  cleaned = cleaned.replace(/The form on your website just received a new submission!\s*/gi, '');
+  cleaned = cleaned.replace(/Je hebt de volgende aanvraag ontvangen via de website:\s*/gi, '');
+  cleaned = cleaned.replace(/This email is a submission of a Framer form[\s\S]*$/i, '');
+  cleaned = cleaned.replace(/Not expecting this email\?[\s\S]*$/i, '');
+
   // ── Strip known signature / quote containers by ID ────────────
   // Outlook mobile: separator line + signature + forwarded content
   cleaned = cleaned.replace(/<div[^>]*id="ms-outlook-mobile-body-separator-line"[\s\S]*$/i, '');
@@ -151,11 +160,15 @@ function cleanHtmlForDisplay(html: string): string {
     ADD_ATTR: ['target'],
   });
 
-  // ── Collapse whitespace ──────────────────────────────────────
-  // Remove empty tags: <p></p>, <div></div>, <span></span>, etc.
-  sanitized = sanitized.replace(/<(p|div|span|h[1-3])[^>]*>\s*<\/\1>/gi, '');
-  // Remove tags that only contain <br> or &nbsp;
-  sanitized = sanitized.replace(/<(p|div|span)[^>]*>\s*(?:<br\s*\/?>|\s|&nbsp;)*\s*<\/\1>/gi, '');
+  // ── Collapse whitespace (run multiple passes for nested empties) ──
+  let prev = '';
+  while (prev !== sanitized) {
+    prev = sanitized;
+    // Remove empty tags: <p></p>, <div></div>, <span></span>, etc.
+    sanitized = sanitized.replace(/<(p|div|span|h[1-3])[^>]*>\s*<\/\1>/gi, '');
+    // Remove tags that only contain <br> or &nbsp;
+    sanitized = sanitized.replace(/<(p|div|span)[^>]*>\s*(?:<br\s*\/?>|\s|&nbsp;)*\s*<\/\1>/gi, '');
+  }
   // Collapse 3+ consecutive <br> into max 2
   sanitized = sanitized.replace(/(<br\s*\/?\s*>[\s]*){3,}/gi, '<br><br>');
   // Remove leading <br> tags
