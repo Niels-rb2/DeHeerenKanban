@@ -130,6 +130,10 @@
     color: var(--clr-text);
     font-family: "Google Sans", system-ui, sans-serif;
   }
+  h1, h2, h3 {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    font-weight: 800;
+  }
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--clr-bg); }
   ::-webkit-scrollbar-thumb { background: var(--clr-outline-dim); border-radius: 2px; }
