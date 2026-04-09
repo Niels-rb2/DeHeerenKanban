@@ -53,7 +53,7 @@ export function EventCard({ event }: EventCardProps) {
           )}
         </div>
         <span className="text-xs shrink-0 mt-0.5" style={{ color: 'var(--clr-text-subtle)' }}>
-          {formatDate(event.created_at)}
+          {new Date(event.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}
         </span>
       </div>
 
