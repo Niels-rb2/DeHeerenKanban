@@ -192,7 +192,7 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
                   >
                     {/* Column header */}
                     <div className="flex items-center justify-between px-1">
-                      <h3 className={`text-sm font-semibold ${col.headerCls}`}>
+                      <h3 className={`text-lg font-semibold ${col.headerCls}`}>
                         {STATUS_LABELS[col.status]}
                       </h3>
                       <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${col.badgeBg}`}>
@@ -257,7 +257,7 @@ export function KanbanBoard({ events: initialEvents }: KanbanBoardProps) {
               >
                 {/* Header with total badge */}
                 <div className="flex items-center justify-between px-1">
-                  <h3 className="text-sm font-semibold kanban-header-gray">Afgesloten</h3>
+                  <h3 className="text-lg font-semibold kanban-header-gray">Afgesloten</h3>
                   <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400">
                     {totalClosed}
                   </span>
