@@ -568,7 +568,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   .map((line, i) => {
                     const text = line.replace(/^[•\-\*]\s*/, '');
                     return (
-                      <li key={i} className="flex items-start gap-2 text-base" style={{ color: 'var(--clr-text)' }}>
+                      <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--clr-text)' }}>
                         <span className="shrink-0 mt-0.5" style={{ color: 'var(--clr-text-muted)' }}>•</span>
                         <span>{text}</span>
                       </li>
@@ -576,7 +576,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   })}
               </ul>
             ) : (
-              <p className="text-base" style={{ color: 'var(--clr-text)' }}>
+              <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
                 {event.special_notes}
               </p>
             )}
@@ -595,7 +595,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     type="date"
                     value={eventDate ? eventDate.split('T')[0] : ''}
                     onChange={(e) => setEventDate(e.target.value ? new Date(e.target.value).toISOString() : '')}
-                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
                     style={{
                       background: 'var(--clr-input)',
                       borderColor: 'var(--clr-input-border)',
@@ -612,7 +612,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   <select
                     value={occasionType}
                     onChange={(e) => setOccasionType(e.target.value)}
-                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
                     style={{
                       background: 'var(--clr-input)',
                       borderColor: 'var(--clr-input-border)',
@@ -644,7 +644,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   type="number"
                   value={guestCount}
                   onChange={(e) => setGuestCount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-base border focus:outline-none focus:ring-2"
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
                   style={{
                     background: 'var(--clr-input)',
                     borderColor: 'var(--clr-input-border)',
@@ -662,7 +662,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
                     style={{
                       background: 'var(--clr-input)',
                       borderColor: 'var(--clr-input-border)',
@@ -679,7 +679,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-3 py-2 pr-9 rounded-lg text-base border appearance-none focus:outline-none focus:ring-2"
+                    className="w-full px-3 py-2 pr-9 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
                     style={{
                       background: 'var(--clr-input)',
                       borderColor: 'var(--clr-input-border)',
@@ -708,7 +708,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
                   e.target.style.height = e.target.scrollHeight + 'px';
                 }}
                 rows={1}
-                className="w-full px-3 py-2 rounded-lg text-base border focus:outline-none focus:ring-2 resize-none overflow-hidden"
+                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 resize-none overflow-hidden"
                 style={{
                   background: 'var(--clr-input)',
                   borderColor: 'var(--clr-input-border)',
@@ -720,10 +720,10 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             {/* Contact info (read-only) */}
             <div className="pt-2 border-t" style={{ borderColor: 'var(--clr-outline)' }}>
               <Field label="E-mailadres">
-                <p className="text-base" style={{ color: 'var(--clr-text)' }}>{event.sender_email}</p>
+                <p className="text-sm" style={{ color: 'var(--clr-text)' }}>{event.sender_email}</p>
               </Field>
               <Field label="Ontvangen">
-                <p className="text-base" style={{ color: 'var(--clr-text)' }}>
+                <p className="text-sm" style={{ color: 'var(--clr-text)' }}>
                   {new Date(event.created_at).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </Field>
