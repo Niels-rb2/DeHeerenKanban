@@ -35,15 +35,18 @@ export function EventCard({ event }: EventCardProps) {
     router.push(`/dashboard/${event.id}`);
   };
 
+  // Use first email date, fallback to created_at
+  const firstContactDate = event.first_message_at || event.created_at;
+
   // Urgency color for date: orange after 10 days, red after 14 days
   const needsUrgency = event.status === 'TO_ANSWER' || event.status === 'ANSWERED';
-  const daysSinceCreated = Math.floor((Date.now() - new Date(event.created_at).getTime()) / (1000 * 60 * 60 * 24));
-  const dateColor = needsUrgency && daysSinceCreated >= 14
+  const daysSinceFirst = Math.floor((Date.now() - new Date(firstContactDate).getTime()) / (1000 * 60 * 60 * 24));
+  const dateColor = needsUrgency && daysSinceFirst >= 14
     ? '#dc2626'
-    : needsUrgency && daysSinceCreated >= 10
+    : needsUrgency && daysSinceFirst >= 10
       ? '#ea580c'
       : 'var(--clr-text-subtle)';
-  const dateFontWeight = needsUrgency && daysSinceCreated >= 10 ? 600 : 400;
+  const dateFontWeight = needsUrgency && daysSinceFirst >= 10 ? 600 : 400;
 
   return (
     <div
@@ -63,7 +66,7 @@ export function EventCard({ event }: EventCardProps) {
           )}
         </div>
         <span className="text-xs shrink-0 mt-0.5" style={{ color: dateColor, fontWeight: dateFontWeight }}>
-          {new Date(event.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}
+          {new Date(firstContactDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}
         </span>
       </div>
 

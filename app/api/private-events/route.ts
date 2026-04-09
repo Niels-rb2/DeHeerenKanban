@@ -112,6 +112,24 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
+    // Fetch earliest message date per event
+    const eventIds = (data || []).map((e: any) => e.id);
+    let firstMessageDates: Record<string, string> = {};
+    if (eventIds.length > 0) {
+      const { data: messages } = await supabaseAdmin
+        .from('messages')
+        .select('thread_id, date')
+        .in('thread_id', eventIds)
+        .order('date', { ascending: true });
+      if (messages) {
+        for (const msg of messages) {
+          if (!firstMessageDates[msg.thread_id]) {
+            firstMessageDates[msg.thread_id] = msg.date;
+          }
+        }
+      }
+    }
+
     // Group by status, sorted: soonest event_date first, nulls at end
     const grouped: Record<ThreadStatus, PrivateEventRequest[]> = {
       TO_ANSWER: [],
@@ -125,7 +143,10 @@ export async function GET(request: Request) {
     (data || []).forEach((event: any) => {
       const status = event.status as ThreadStatus;
       if (status in grouped) {
-        grouped[status].push(event);
+        grouped[status].push({
+          ...event,
+          first_message_at: firstMessageDates[event.id] || event.created_at,
+        });
       }
     });
 

@@ -36,6 +36,7 @@ export interface PrivateEventRequest {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  first_message_at?: string;
   messages?: Message[];
 }
 
