@@ -336,6 +336,7 @@ html.dark .stat-label-red    { color: #E57373; }
 /* Light */
 .kanban-header-orange { color: #92400e; }
 .kanban-header-blue   { color: #1e40af; }
+.kanban-header-purple { color: #581c87; }
 .kanban-header-green  { color: #14532d; }
 .kanban-header-red    { color: #7f1d1d; }
 .kanban-header-gray   { color: #374151; }
@@ -343,6 +344,7 @@ html.dark .stat-label-red    { color: #E57373; }
 /* Dark */
 html.dark .kanban-header-orange { color: #FBD38D; }
 html.dark .kanban-header-blue   { color: #93C5FD; }
+html.dark .kanban-header-purple { color: #D8B4FE; }
 html.dark .kanban-header-green  { color: #86EFAC; }
 html.dark .kanban-header-red    { color: #FCA5A5; }
 html.dark .kanban-header-gray   { color: #D1D5DB; }
