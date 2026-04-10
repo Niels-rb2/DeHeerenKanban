@@ -191,7 +191,7 @@ function DashboardContent() {
           className="text-2xl md:text-[2.5rem] font-medium leading-none"
           style={{ color: 'var(--clr-text)' }}
         >
-          {getGreeting()} <span style={{ color: '#A03110' }}>Suzan</span>
+          {getGreeting()}, <span style={{ color: '#A03110' }}>Suzan</span>
         </h1>
       </div>
 
