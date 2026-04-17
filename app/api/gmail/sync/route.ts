@@ -341,6 +341,24 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('[SYNC] Error:', error.message);
+
+    // Detect Google OAuth auth errors and return 401 so frontend can redirect to login
+    const msg = error.message || '';
+    const isAuthError =
+      msg.includes('invalid authentication credentials') ||
+      msg.includes('invalid_grant') ||
+      msg.includes('401') ||
+      error?.response?.status === 401 ||
+      error?.code === 401;
+
+    if (isAuthError) {
+      return NextResponse.json({
+        error: 'Unauthorized',
+        details: 'Google authenticatie is verlopen. Log uit en log opnieuw in.',
+        needsReauth: true,
+      }, { status: 401 });
+    }
+
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

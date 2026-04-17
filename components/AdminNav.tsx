@@ -38,6 +38,12 @@ function AdminNavInner() {
       } else {
         const msg = data.details ? `${data.error}: ${data.details}` : (data.error || 'Sync mislukt');
         toast.error(msg);
+        // If Google auth is expired, force a full sign-out so user can re-auth
+        if (data.needsReauth) {
+          setTimeout(() => {
+            window.location.href = '/api/auth/signout';
+          }, 2000);
+        }
       }
     } catch {
       toast.error('Sync mislukt');
