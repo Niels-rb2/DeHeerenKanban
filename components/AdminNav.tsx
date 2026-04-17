@@ -36,7 +36,8 @@ function AdminNavInner() {
         window.dispatchEvent(new Event('gmail-sync-complete'));
         router.refresh();
       } else {
-        toast.error(data.error || 'Sync mislukt');
+        const msg = data.details ? `${data.error}: ${data.details}` : (data.error || 'Sync mislukt');
+        toast.error(msg);
       }
     } catch {
       toast.error('Sync mislukt');

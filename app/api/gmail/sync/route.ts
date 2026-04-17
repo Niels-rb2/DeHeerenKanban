@@ -53,8 +53,18 @@ function parseFramerNotification(html: string): {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
+  console.log('[GMAIL SYNC] Session check:', {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    userEmail: session?.user?.email,
+    hasAccessToken: !!session?.accessToken,
+    error: session?.error,
+  });
   if (!session?.accessToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({
+      error: 'Unauthorized',
+      details: session?.error || 'No access token in session. Log uit en log opnieuw in.',
+    }, { status: 401 });
   }
 
   // Parse options from request body (optional)
