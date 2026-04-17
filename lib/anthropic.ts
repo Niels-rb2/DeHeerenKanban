@@ -113,11 +113,61 @@ function buildConversationText(messages: ThreadMessage[]): string {
 
 // ─── Full-thread extraction ──────────────────────────────────────────────────
 
+export interface CurrentEventContext {
+  specialNotes?: string | null;
+  eventDate?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  guestCount?: number | null;
+  occasionType?: string | null;
+  senderName?: string | null;
+  notesUpdatedAt?: string | null;
+}
+
 export async function extractEventDataFromThread(
   messages: ThreadMessage[],
   today: string = new Date().toISOString().split('T')[0],
+  currentEvent?: CurrentEventContext,
 ): Promise<ExtractedThreadData> {
   const conversation = buildConversationText(messages);
+
+  // Build context block for manually-entered data (if any)
+  const hasCurrentContext = currentEvent && (
+    currentEvent.specialNotes ||
+    currentEvent.eventDate ||
+    currentEvent.startTime ||
+    currentEvent.endTime ||
+    currentEvent.guestCount ||
+    currentEvent.occasionType
+  );
+
+  const notesUpdatedStr = currentEvent?.notesUpdatedAt
+    ? formatDate(currentEvent.notesUpdatedAt)
+    : 'onbekend';
+
+  // Last email date (inbound or outbound) for comparison
+  const sortedMsgs = messages.length > 0
+    ? [...messages].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    : [];
+  const lastEmailDateStr = sortedMsgs.length > 0 ? formatDate(sortedMsgs[0].date) : 'onbekend';
+
+  const contextBlock = hasCurrentContext
+    ? `
+
+═══════════════════════════════════════════════
+HANDMATIG INGEVOERDE GEGEVENS (laatst bijgewerkt op: ${notesUpdatedStr})
+Deze info komt uit persoonlijk contact, telefoongesprek of bezoek met de klant:
+${currentEvent?.occasionType ? `- Gelegenheid: ${currentEvent.occasionType}` : ''}
+${currentEvent?.eventDate ? `- Datum: ${currentEvent.eventDate}` : ''}
+${currentEvent?.startTime ? `- Begintijd: ${currentEvent.startTime}` : ''}
+${currentEvent?.endTime ? `- Eindtijd: ${currentEvent.endTime}` : ''}
+${currentEvent?.guestCount ? `- Aantal personen: ${currentEvent.guestCount}` : ''}
+${currentEvent?.specialNotes ? `- Bijzonderheden (handmatig genoteerd):\n${currentEvent.specialNotes}` : ''}
+═══════════════════════════════════════════════
+
+LAATSTE E-MAIL IN GESPREK: ${lastEmailDateStr}
+`
+    : '';
 
   const systemPrompt = `Je bent een expert in het analyseren van e-mailgesprekken voor Café De Heeren.
 
@@ -129,7 +179,22 @@ BELANGRIJK OVER DATUMS:
 - "28 november" in bericht van maart 2026 = eventDate: "2026-11-28"
 - Als NERGENS een datum wordt genoemd, gebruik null.
 
-Retourneer ALLEEN een JSON-object:
+${hasCurrentContext ? `COMBINEREN VAN BRONNEN (MEEST RECENTE INFO WINT):
+- Je krijgt TWEE bronnen: (1) het e-mailgesprek, (2) handmatig ingevoerde gegevens.
+- HARDE REGEL: de MEEST RECENTE informatie is leidend. Vergelijk de datums:
+  * "Handmatig bijgewerkt op" = ${notesUpdatedStr}
+  * "Laatste e-mail" = ${lastEmailDateStr}
+- Als de LAATSTE E-MAIL RECENTER is dan de handmatige update: gebruik de e-mailinfo als waarheid. Als de e-mail een wijziging noemt (bv. "ik wijzig de datum naar X", "toch 55 personen"), dan is dat de laatste stand.
+- Als de HANDMATIGE UPDATE RECENTER is dan de laatste e-mail: gebruik de handmatige info als waarheid (dit is info uit een recent telefoon-/persoonlijk gesprek die NIET in de mails staat).
+- Bij twijfel: combineer beide intelligent — geen info verliezen.
+
+SPECIFIEK VOOR specialNotes (Bijzonderheden):
+- Start met de HANDMATIGE bijzonderheden als basis — deze bevatten meestal uitgebreide info uit persoonlijk contact.
+- Werk per detail bij als een RECENTERE e-mail iets wijzigt: "55 personen ipv 49" → pas aan.
+- Voeg NIEUWE info uit recentere e-mails toe die nog niet in de handmatige notities stond.
+- VERLIES NOOIT detail: als er uitgebreide handmatige info staat (menu, muziek, versiering), neem die volledig over.
+
+` : ''}Retourneer ALLEEN een JSON-object:
 {
   "senderName": "naam klant (niet café)",
   "senderEmail": "klant email (niet framer/elfsight/café) of null",
@@ -144,16 +209,16 @@ Retourneer ALLEEN een JSON-object:
 }
 
 REGELS VOOR specialNotes:
-- Verzamel ALLE specifieke wensen, verzoeken en bijzonderheden uit het HELE gesprek.
-- Denk aan: eten/drinken wensen (bittergarnituur, kaasplankjes, taart), muziek (eigen Spotify lijst, DJ), decoratie, dieetwensen, speciale verzoeken (patatje, eigen zakjes), tijdsindeling, etc.
+- Verzamel ALLE specifieke wensen, verzoeken en bijzonderheden uit het HELE gesprek${hasCurrentContext ? ' ÉN de handmatige notities' : ''}.
+${hasCurrentContext ? '- NEEM ALLE handmatige bijzonderheden VOLLEDIG over — verlies geen informatie.\n- Vul aan met wensen uit e-mails die NIET in de handmatige notities staan.\n' : ''}- Denk aan: eten/drinken wensen (bittergarnituur, kaasplankjes, taart), muziek (eigen Spotify lijst, DJ), decoratie, dieetwensen, speciale verzoeken (patatje, eigen zakjes), tijdsindeling, fotograaf, versiering, arrangement, etc.
 - Als de klant iets wijzigt (bijv. "ipv kaasplankjes liever extra bittergarnituur"), noteer dan de DEFINITIEVE wens.
-- Elke wens op een aparte regel, voorafgegaan door "• ".
-- Voorbeeld: "• 3x bittergarnituur (ipv 2x bitter + kaasplankjes)\n• Patatje aan het einde, met eigen zakje\n• Eigen Spotify playlist"
+- Structureer logisch: groepeer per categorie (Tijd, Arrangement, Eten, Muziek, Versiering, etc.) als dat natuurlijk is.
+- Gebruik "• " of "- " voor bullets, en lege regels tussen categorieën.
 
 REGELS VOOR aiSummary:
-- Geef een opsomming van de BELANGRIJKSTE feiten als bullet points.
+- Geef een opsomming van de BELANGRIJKSTE feiten als bullet points${hasCurrentContext ? ' uit beide bronnen (mails + handmatige notities)' : ''}.
 - Begin elke bullet met "• ".
-- Neem op: gelegenheid, datum, tijdstip (begin-eind), aantal personen, alle bijzonderheden/wensen, en de huidige status/uitkomst van het gesprek.
+- Neem op: gelegenheid, datum, tijdstip (begin-eind), aantal personen, belangrijkste bijzonderheden/wensen, en de huidige status/uitkomst.
 - BELANGRIJK: Gebruik ALTIJD "Café De Heeren" in plaats van "café" of "Café". Nooit alleen "café" schrijven.
 - Voorbeeld:
   "• Verjaardagsborrel op zaterdag 15 maart 2025\n• 18:00 – 22:00, 35 personen\n• 3x bittergarnituur, patatje aan het einde met eigen zakje\n• Eigen Spotify playlist\n• Café De Heeren heeft bevestigd, feestje gaat door"
@@ -169,9 +234,9 @@ senderEmail: echte klant-email, NIET noreply@framer.com, notifications@forms.elf
 
   const response = await getClient().messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
+    max_tokens: 2048,
     system: systemPrompt,
-    messages: [{ role: 'user', content: `Analyseer dit e-mailgesprek:\n\n${conversation}\n\nRetourneer ALLEEN het JSON-object.` }],
+    messages: [{ role: 'user', content: `Analyseer dit e-mailgesprek${hasCurrentContext ? ' gecombineerd met de handmatige gegevens' : ''}:\n\n${conversation}${contextBlock}\n\nRetourneer ALLEEN het JSON-object.` }],
   });
 
   const textContent = response.content.find((block) => block.type === 'text');

@@ -36,7 +36,18 @@ export async function POST(
 
     try {
       const today = new Date().toISOString().split('T')[0];
-      const extracted = await extractEventDataFromThread(messages, today);
+
+      // Pass current event context so AI knows about manually-added info
+      const extracted = await extractEventDataFromThread(messages, today, {
+        specialNotes: event.special_notes,
+        eventDate: event.event_date,
+        startTime: event.start_time,
+        endTime: event.end_time,
+        guestCount: event.guest_count,
+        occasionType: event.occasion_type,
+        senderName: event.sender_name,
+        notesUpdatedAt: event.updated_at,
+      });
 
       // Determine final status
       let finalStatus = extracted.statusHint || 'TO_ANSWER';
@@ -55,18 +66,20 @@ export async function POST(
         senderEmail = extracted.senderEmail;
       }
 
+      // Fallback safety: never overwrite existing non-null fields with null
+      // (AI should combine sources, but if it returns null, prefer existing value)
       const { data, error } = await supabaseAdmin
         .from('private_event_requests')
         .update({
           sender_name: extracted.senderName || event.sender_name,
           sender_email: senderEmail,
-          occasion_type: extracted.occasionType,
-          event_date: extracted.eventDate,
-          start_time: extracted.startTime,
-          end_time: extracted.endTime,
-          guest_count: extracted.guestCount,
-          special_notes: extracted.specialNotes,
-          ai_summary: extracted.aiSummary,
+          occasion_type: extracted.occasionType ?? event.occasion_type,
+          event_date: extracted.eventDate ?? event.event_date,
+          start_time: extracted.startTime ?? event.start_time,
+          end_time: extracted.endTime ?? event.end_time,
+          guest_count: extracted.guestCount ?? event.guest_count,
+          special_notes: extracted.specialNotes ?? event.special_notes,
+          ai_summary: extracted.aiSummary ?? event.ai_summary,
           status: finalStatus,
           archived_at: finalStatus === 'ARCHIVE' ? new Date().toISOString() : null,
           updated_at: new Date().toISOString(),
