@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { RefreshCw, Settings, Moon, Sun, Search, X, LogOut } from 'lucide-react';
+import { RefreshCw, Settings, Moon, Sun, Search, X, LogOut, LayoutGrid } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -115,6 +115,19 @@ function AdminNavInner() {
         )}
 
         {!onDetailPage && <>
+          <a
+            href="https://www.bijcafedeheeren.nl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+            style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+            aria-label="Café De Heeren website"
+            title="Café De Heeren website"
+          >
+            <LayoutGrid size={15} />
+          </a>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
