@@ -115,6 +115,21 @@ function AdminNavInner() {
         )}
 
         {!onDetailPage && <>
+          <a
+            href="https://www.bijcafedeheeren.nl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+            style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+            aria-label="Café De Heeren website"
+            title="Café De Heeren website"
+          >
+            <svg width="15" height="15" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+              <path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z" />
+            </svg>
+          </a>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
