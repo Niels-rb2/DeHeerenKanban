@@ -2,6 +2,8 @@ import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Required on Vercel so NextAuth trusts the X-Forwarded-Host header
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -16,7 +18,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile }) {
+      // Naam-override voor gedeelde accounts
+      if (profile?.email === 'info@cafedeheeren.nl') {
+        token.name = 'Suzan';
+      }
+
       // On initial sign-in, store tokens
       if (account) {
         token.accessToken = account.access_token;
@@ -78,5 +85,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET,
 });
