@@ -332,6 +332,47 @@ html.dark .stat-label-blue   { color: #93C5FD; }
 html.dark .stat-label-orange { color: #FFAB40; }
 html.dark .stat-label-red    { color: #E57373; }
 
+/* ── Nav icon button + tooltip ──────────── */
+.nav-icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--clr-surface-low);
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.nav-icon-btn:hover,
+.nav-icon-btn[data-active='true'] {
+  background: var(--clr-surface-variant);
+  color: var(--clr-text);
+}
+
+.nav-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--clr-text);
+  color: var(--clr-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 50;
+}
+.nav-icon-btn:hover .nav-tooltip,
+.nav-icon-btn:focus-visible .nav-tooltip {
+  opacity: 1;
+}
+
 /* ── Kanban column header colors ──────────── */
 /* Light */
 .kanban-header-orange { color: #92400e; }

@@ -119,52 +119,38 @@ function AdminNavInner() {
             href="https://www.bijcafedeheeren.nl"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer"
-            style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+            className="nav-icon-btn group relative"
             aria-label="Dashboard"
-            title="Dashboard"
           >
             <svg width="15" height="15" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
               <path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z" />
             </svg>
+            <span className="nav-tooltip">Dashboard</span>
           </a>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
-            style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+            className="nav-icon-btn group relative"
             aria-label={mounted && theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-            title={mounted && theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           >
-            {mounted && (theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />)}
+            {mounted && theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            <span className="nav-tooltip">{mounted && theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </button>
           <Link
             href="/dashboard/settings"
-            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
-            style={{
-              background: pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)',
-              color: pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)'; e.currentTarget.style.color = pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)'; }}
+            className="nav-icon-btn group relative"
+            data-active={pathname === '/dashboard/settings' ? 'true' : undefined}
             aria-label="Instellingen"
-            title="Instellingen"
           >
             <Settings size={15} />
+            <span className="nav-tooltip">Instellingen</span>
           </Link>
           <a
             href="/api/auth/logout"
-            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer"
-            style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
+            className="nav-icon-btn group relative"
             aria-label="Uitloggen"
-            title="Uitloggen"
           >
             <LogOut size={15} />
+            <span className="nav-tooltip">Uitloggen</span>
           </a>
         </>}
       </div>
