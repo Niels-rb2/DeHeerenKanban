@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { signOut } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
-  // Build redirect URL from the current request (works on any host)
+  // Use NextAuth's signOut to properly clear session + cookies
+  try {
+    await signOut({ redirect: false });
+  } catch (e) {
+    console.error('[LOGOUT] signOut error:', e);
+  }
+
+  // Build redirect URL from the request origin (works on any host)
   const loginUrl = new URL('/login', req.nextUrl.origin);
   const response = NextResponse.redirect(loginUrl);
 
-  // Delete NextAuth session cookies (modern + legacy)
+  // Belt-and-suspenders: also clear cookies manually in case signOut missed any
   const cookiesToDelete = [
     'authjs.session-token',
     '__Secure-authjs.session-token',
@@ -18,7 +26,6 @@ export async function GET(req: NextRequest) {
     '__Secure-next-auth.session-token',
     'next-auth.callback-url',
     'next-auth.csrf-token',
-    // Legacy custom cookie from old auth config
     'de-heeren-session',
     '__Secure-de-heeren-session',
   ];

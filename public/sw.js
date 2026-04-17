@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cdh-feestjes-v1';
+const CACHE_NAME = 'cdh-feestjes-v2';
 
 // Assets to pre-cache on install
 const PRECACHE_URLS = [
