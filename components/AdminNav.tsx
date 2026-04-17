@@ -123,8 +123,8 @@ function AdminNavInner() {
             style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
-            aria-label="Café De Heeren website"
-            title="Café De Heeren website"
+            aria-label="Dashboard"
+            title="Dashboard"
           >
             <svg width="15" height="15" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
               <path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z" />
@@ -136,7 +136,8 @@ function AdminNavInner() {
             style={{ background: 'var(--clr-surface-low)', color: 'var(--clr-text-muted)' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--clr-surface-low)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
-            aria-label="Wissel thema"
+            aria-label={mounted && theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            title={mounted && theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           >
             {mounted && (theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />)}
           </button>
@@ -150,6 +151,7 @@ function AdminNavInner() {
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--clr-surface-variant)'; e.currentTarget.style.color = 'var(--clr-text)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = pathname === '/dashboard/settings' ? 'var(--clr-surface-variant)' : 'var(--clr-surface-low)'; e.currentTarget.style.color = pathname === '/dashboard/settings' ? 'var(--clr-text)' : 'var(--clr-text-muted)'; }}
             aria-label="Instellingen"
+            title="Instellingen"
           >
             <Settings size={15} />
           </Link>
