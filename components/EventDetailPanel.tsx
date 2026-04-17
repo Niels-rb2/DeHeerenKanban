@@ -541,7 +541,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
 
           {!event.ai_summary && (
             <p className="text-sm italic mb-3" style={{ color: 'var(--clr-text-subtle)' }}>
-              Nog geen samenvatting — klik op Heropanalyse.
+              Nog geen samenvatting — klik op AI analyse.
             </p>
           )}
 
@@ -551,7 +551,7 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             className="btn-gold text-sm inline-flex items-center gap-1.5 py-3 px-6 rounded-full font-semibold self-start mt-4"
           >
             <Sparkles size={12} />
-            {reanalyzing ? 'Bezig…' : 'Heropanalyse'}
+            {reanalyzing ? 'Bezig…' : 'AI analyse'}
           </button>
         </div>
 
