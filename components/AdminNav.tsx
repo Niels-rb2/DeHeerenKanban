@@ -128,8 +128,6 @@ function AdminNavInner() {
         {!onDetailPage && <>
           <a
             href="https://www.bijcafedeheeren.nl"
-            target="_blank"
-            rel="noopener noreferrer"
             className="nav-icon-btn group relative"
             aria-label="Dashboard"
           >
