@@ -41,7 +41,7 @@ function AdminNavInner() {
         // If Google auth is expired, force a full sign-out so user can re-auth
         if (data.needsReauth) {
           setTimeout(() => {
-            window.location.href = '/api/auth/signout';
+            window.location.href = '/api/auth/logout';
           }, 2000);
         }
       }
