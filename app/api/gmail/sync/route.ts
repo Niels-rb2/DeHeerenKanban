@@ -61,9 +61,15 @@ export async function POST(req: NextRequest) {
     error: session?.error,
   });
   if (!session?.accessToken) {
+    // If the session has a known auth error (like RefreshTokenMissing),
+    // flag needsReauth so the frontend auto-redirects to signout.
+    const isAuthIssue =
+      session?.error === 'RefreshTokenMissing' ||
+      session?.error === 'RefreshTokenError';
     return NextResponse.json({
       error: 'Unauthorized',
       details: session?.error || 'No access token in session. Log uit en log opnieuw in.',
+      needsReauth: isAuthIssue || !session,
     }, { status: 401 });
   }
 

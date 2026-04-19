@@ -26,8 +26,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // On initial sign-in, store tokens
       if (account) {
+        console.log('[AUTH JWT] Initial sign-in — account received:', {
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token,
+          expiresAt: account.expires_at,
+          scope: account.scope,
+          provider: account.provider,
+        });
         token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
+        // Persist existing refresh token if Google didn't send a new one
+        // (happens if user re-auths without revoking)
+        token.refreshToken = account.refresh_token ?? token.refreshToken;
         token.expiresAt = account.expires_at;
         return token;
       }
