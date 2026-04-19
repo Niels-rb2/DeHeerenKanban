@@ -8,6 +8,32 @@ import { ThreadStatus } from '@/lib/types';
 const FRAMER_EMAIL = 'noreply@framer.com';
 
 /**
+ * Forcibly clear all NextAuth session-related cookies on the response.
+ * Used when Google rejects our access token — we need to invalidate the
+ * session server-side so the login page doesn't redirect back to /dashboard.
+ */
+function killSessionCookies(response: NextResponse) {
+  const names = [
+    'authjs.session-token',
+    '__Secure-authjs.session-token',
+    'authjs.callback-url',
+    '__Secure-authjs.callback-url',
+    'authjs.csrf-token',
+    '__Host-authjs.csrf-token',
+    '__Secure-authjs.csrf-token',
+  ];
+  for (const name of names) {
+    response.cookies.set(name, '', {
+      maxAge: 0,
+      path: '/',
+      secure: name.startsWith('__Secure-') || name.startsWith('__Host-'),
+      httpOnly: true,
+      sameSite: 'lax',
+    });
+  }
+}
+
+/**
  * Parse a Framer form notification email.
  * Extracts customer name, email, phone, and request text from HTML body.
  * Uses regex to handle cases where fields run together without clean line breaks.
@@ -66,11 +92,13 @@ export async function POST(req: NextRequest) {
     const isAuthIssue =
       session?.error === 'RefreshTokenMissing' ||
       session?.error === 'RefreshTokenError';
-    return NextResponse.json({
+    const r = NextResponse.json({
       error: 'Unauthorized',
       details: session?.error || 'No access token in session. Log uit en log opnieuw in.',
       needsReauth: isAuthIssue || !session,
     }, { status: 401 });
+    if (isAuthIssue) killSessionCookies(r);
+    return r;
   }
 
   // Parse options from request body (optional)
@@ -358,11 +386,14 @@ export async function POST(req: NextRequest) {
       error?.code === 401;
 
     if (isAuthError) {
-      return NextResponse.json({
+      const r = NextResponse.json({
         error: 'Unauthorized',
         details: 'Google authenticatie is verlopen. Log uit en log opnieuw in.',
         needsReauth: true,
       }, { status: 401 });
+      // Kill the session cookie server-side so /login doesn't redirect back
+      killSessionCookies(r);
+      return r;
     }
 
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -38,11 +38,12 @@ function AdminNavInner() {
       } else {
         const msg = data.details ? `${data.error}: ${data.details}` : (data.error || 'Sync mislukt');
         toast.error(msg);
-        // If Google auth is expired, force a full sign-out so user can re-auth
+        // If Google auth is expired, session cookies were already killed
+        // by the sync route. Just navigate to /login for re-auth.
         if (data.needsReauth) {
           setTimeout(() => {
-            window.location.href = '/api/auth/logout';
-          }, 2000);
+            window.location.href = '/login';
+          }, 1500);
         }
       }
     } catch {
