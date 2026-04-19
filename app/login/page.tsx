@@ -10,7 +10,10 @@ export default async function LoginPage() {
   }
 
   const session = await auth();
-  if (session) {
+  // Only redirect if session is fully healthy (has accessToken and no error).
+  // A broken session (e.g. RefreshTokenMissing) should still show login so
+  // the user can re-authenticate cleanly.
+  if (session?.accessToken && !session.error) {
     redirect('/dashboard');
   }
 
