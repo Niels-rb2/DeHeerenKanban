@@ -37,13 +37,16 @@ function AdminNavInner() {
         router.refresh();
       } else {
         const msg = data.details ? `${data.error}: ${data.details}` : (data.error || 'Sync mislukt');
-        toast.error(msg);
-        // If Google auth is expired, session cookies were already killed
-        // by the sync route. Just navigate to /login for re-auth.
         if (data.needsReauth) {
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 1500);
+          toast.error(msg, {
+            duration: 10000,
+            action: {
+              label: 'Opnieuw inloggen',
+              onClick: () => { window.location.href = '/login'; },
+            },
+          });
+        } else {
+          toast.error(msg);
         }
       }
     } catch {
