@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     // threads aren't silently dropped when there are more than 100 labeled threads.
     const MAX_PAGES = 5;
     type GmailThreadStub = { id?: string | null; historyId?: string | null };
-    const threadMap = new Map<string, GmailThreadStub>();
+    const gmailThreads: GmailThreadStub[] = [];
     let pageToken: string | undefined = undefined;
     for (let page = 0; page < MAX_PAGES; page++) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,31 +134,10 @@ export async function POST(req: NextRequest) {
         maxResults: 100,
         pageToken,
       });
-      for (const t of (listRes.data.threads || []) as GmailThreadStub[]) {
-        if (t.id) threadMap.set(t.id, t);
-      }
+      if (listRes.data.threads) gmailThreads.push(...listRes.data.threads);
       pageToken = listRes.data.nextPageToken || undefined;
       if (!pageToken) break;
     }
-
-    // Safety net: also search Gmail directly for recent "Aanvraag Besloten Feestje"
-    // threads from the last 60 days, in case the label isn't applied (filter delay,
-    // manually-removed label, etc.). Merges with the label-based results above.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const subjectRes: any = await gmail.users.threads.list({
-        userId: 'me',
-        q: 'subject:"Aanvraag Besloten Feestje" newer_than:60d',
-        maxResults: 50,
-      });
-      for (const t of (subjectRes.data.threads || []) as GmailThreadStub[]) {
-        if (t.id && !threadMap.has(t.id)) threadMap.set(t.id, t);
-      }
-    } catch (e) {
-      console.warn('[SYNC] Subject fallback search failed:', e);
-    }
-
-    const gmailThreads: GmailThreadStub[] = Array.from(threadMap.values());
 
     let synced = 0;
     let alreadyUpToDate = 0;
