@@ -1,25 +1,29 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import {
-  getGmailClient,
-  extractEmailBody,
-  parseEmailAddress,
-  parseFramerNotification,
-  isFramerSubmission,
-  CAFE_EMAIL,
-} from '@/lib/gmail';
+import { parseFramerNotification, CAFE_EMAIL, FRAMER_EMAIL } from '@/lib/gmail';
 import { supabaseAdmin } from '@/lib/supabase';
 import { extractEventDataFromEmail } from '@/lib/anthropic';
 import { ThreadStatus } from '@/lib/types';
 
+type Message = {
+  id: string;
+  thread_id: string;
+  gmail_message_id: string;
+  from_email: string | null;
+  body_html: string | null;
+  body_plain: string | null;
+  snippet: string | null;
+  date: string | null;
+  to_emails: string[] | null;
+};
+
 /**
- * One-shot endpoint: for every active thread in the DB that actually contains
- * multiple Framer submissions in its Gmail thread (e.g. when testing with the
- * same sender email and Gmail threaded two form submissions together), create
- * a secondary event row per extra Framer submission.
+ * For each existing primary event row, look at the messages already stored in
+ * our DB. If more than one message looks like an original Framer website-form
+ * submission, create a secondary event row per extra submission.
  *
- * Synthetic thread id: `${gmail_thread_id}:${framer_message_id}` so each row
- * stays unique while still being traceable back to the original Gmail thread.
+ * Framer-submission detection here runs on the message body content we already
+ * have in Supabase — no Gmail round-trip needed.
  */
 export async function POST() {
   const session = await auth();
@@ -27,43 +31,59 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const gmail = getGmailClient(session.accessToken);
-
-  // Load all primary (non-synthetic) threads from the DB.
+  // Only primary (non-synthetic) rows. Synthetic rows already represent a split.
   const { data: primaryRows } = await supabaseAdmin
     .from('private_event_requests')
     .select('id, gmail_thread_id, status')
     .not('gmail_thread_id', 'like', '%:%');
 
-  const created: Array<{ gmail_thread_id: string; senderName: string; senderEmail: string }> = [];
+  const created: Array<{
+    parentThreadId: string;
+    syntheticThreadId: string;
+    senderName: string;
+    senderEmail: string;
+  }> = [];
   const errors: string[] = [];
+  const diagnostics: Array<{ parentThreadId: string; framerCount: number }> = [];
 
   for (const row of primaryRows || []) {
-    const tid = row.gmail_thread_id;
     try {
-      const threadDetail = await gmail.users.threads.get({
-        userId: 'me',
-        id: tid,
-        format: 'full',
-      });
-      const messages = threadDetail.data.messages || [];
+      const { data: msgs } = await supabaseAdmin
+        .from('messages')
+        .select('id, thread_id, gmail_message_id, from_email, body_html, body_plain, snippet, date, to_emails')
+        .eq('thread_id', row.id)
+        .order('date', { ascending: true });
 
-      const framerMessages = messages.filter(msg => {
-        const hdr = msg.payload?.headers || [];
-        const from = hdr.find(h => h.name?.toLowerCase() === 'from')?.value || '';
-        const subject = hdr.find(h => h.name?.toLowerCase() === 'subject')?.value || '';
-        const fromEmail = parseEmailAddress(from).email;
-        const { plain, html } = extractEmailBody(msg.payload);
-        const body = `${msg.snippet || ''}\n${plain || ''}\n${html || ''}`;
-        return isFramerSubmission(fromEmail, subject, body);
-      });
+      const messages = (msgs || []) as Message[];
 
-      if (framerMessages.length <= 1) continue;
+      const isFramerMsg = (m: Message) => {
+        const fromIsFramer = (m.from_email || '').toLowerCase() === FRAMER_EMAIL.toLowerCase();
+        const body = `${m.snippet || ''}\n${m.body_plain || ''}\n${m.body_html || ''}`;
+        const hasFramerFooter =
+          /support@framer\.com/i.test(body) ||
+          /submission of a Framer form/i.test(body) ||
+          /This email is a submission/i.test(body);
+        const hasFormFields =
+          /Voornaam[:\s]/i.test(body) &&
+          /E-?mailadres[:\s]/i.test(body) &&
+          /Beschrijf/i.test(body);
+        // Classic Framer sender, OR sender is cafe self-mail with Framer footer,
+        // OR body has the full form signature (fields + footer).
+        return (
+          fromIsFramer ||
+          (hasFramerFooter && hasFormFields)
+        );
+      };
 
-      // The first Framer submission is already represented by the primary row.
-      for (let i = 1; i < framerMessages.length; i++) {
-        const fMsg = framerMessages[i];
-        const synthTid = `${tid}:${fMsg.id}`;
+      const framerMsgs = messages.filter(isFramerMsg);
+      diagnostics.push({ parentThreadId: row.gmail_thread_id, framerCount: framerMsgs.length });
+
+      if (framerMsgs.length <= 1) continue;
+
+      // First Framer msg stays tied to the existing primary row. Split the rest out.
+      for (let i = 1; i < framerMsgs.length; i++) {
+        const fMsg = framerMsgs[i];
+        const synthTid = `${row.gmail_thread_id}:${fMsg.gmail_message_id}`;
 
         const { data: existing } = await supabaseAdmin
           .from('private_event_requests')
@@ -72,18 +92,17 @@ export async function POST() {
           .maybeSingle();
         if (existing) continue;
 
-        const { plain, html } = extractEmailBody(fMsg.payload);
-        const parsed = parseFramerNotification(html || '');
+        const parsed = parseFramerNotification(fMsg.body_html || '');
         const senderName = [parsed.firstName, parsed.lastName].filter(Boolean).join(' ') || '';
         const senderEmail = parsed.email || '';
         const requestBody = parsed.request || fMsg.snippet || '';
         if (!senderEmail) {
-          errors.push(`${synthTid}: no email extracted`);
+          errors.push(`${synthTid}: no email extracted from body`);
           continue;
         }
 
-        let extractedData = {
-          senderName: senderName,
+        let extracted = {
+          senderName,
           occasionType: null as string | null,
           eventDate: null as string | null,
           startTime: null as string | null,
@@ -94,7 +113,7 @@ export async function POST() {
         };
         if (requestBody) {
           try {
-            extractedData = await extractEventDataFromEmail(requestBody);
+            extracted = await extractEventDataFromEmail(requestBody);
           } catch (e) {
             console.warn('[SPLIT] AI extraction failed:', e);
           }
@@ -104,15 +123,15 @@ export async function POST() {
           .from('private_event_requests')
           .insert({
             gmail_thread_id: synthTid,
-            sender_name: extractedData.senderName || senderName,
+            sender_name: extracted.senderName || senderName,
             sender_email: senderEmail,
-            occasion_type: extractedData.occasionType,
-            event_date: extractedData.eventDate,
-            start_time: extractedData.startTime,
-            end_time: extractedData.endTime,
-            guest_count: extractedData.guestCount,
-            special_notes: extractedData.specialNotes,
-            ai_summary: extractedData.aiSummary,
+            occasion_type: extracted.occasionType,
+            event_date: extracted.eventDate,
+            start_time: extracted.startTime,
+            end_time: extracted.endTime,
+            guest_count: extracted.guestCount,
+            special_notes: extracted.specialNotes,
+            ai_summary: extracted.aiSummary,
             status: 'TO_ANSWER' as ThreadStatus,
           })
           .select()
@@ -123,40 +142,40 @@ export async function POST() {
           continue;
         }
 
-        // Copy the Framer submission message with a synthetic gmail_message_id
-        // so the new card shows the customer's original request.
-        const date = new Date(parseInt(fMsg.internalDate || '0')).toISOString();
-        const { error: msgError } = await supabaseAdmin.from('messages').insert({
+        await supabaseAdmin.from('messages').insert({
           thread_id: insertedRow.id,
-          gmail_message_id: `${fMsg.id}:${synthTid}`,
+          gmail_message_id: `${fMsg.gmail_message_id}:${synthTid}`,
           from_name: senderName || 'Klant (via website)',
           from_email: senderEmail,
-          to_emails: [CAFE_EMAIL],
-          date,
+          to_emails: fMsg.to_emails || [CAFE_EMAIL],
+          date: fMsg.date,
           snippet: fMsg.snippet || '',
-          body_plain: plain,
-          body_html: html,
+          body_plain: fMsg.body_plain,
+          body_html: fMsg.body_html,
           direction: 'INBOUND',
         });
-        if (msgError) {
-          console.error('[SPLIT] Message insert error:', msgError.message);
-        }
 
         created.push({
-          gmail_thread_id: synthTid,
-          senderName: extractedData.senderName || senderName,
+          parentThreadId: row.gmail_thread_id,
+          syntheticThreadId: synthTid,
+          senderName: extracted.senderName || senderName,
           senderEmail,
         });
       }
-    } catch (threadError: any) {
-      errors.push(`${tid}: ${threadError.message}`);
+    } catch (err: any) {
+      errors.push(`${row.gmail_thread_id}: ${err.message}`);
     }
   }
+
+  const multiFramerThreads = diagnostics.filter(d => d.framerCount > 1);
 
   return NextResponse.json({
     success: true,
     createdCount: created.length,
     created,
     errors: errors.slice(0, 20),
+    threadsScanned: diagnostics.length,
+    threadsWithMultipleFramer: multiFramerThreads.length,
+    multiFramerSample: multiFramerThreads.slice(0, 10),
   });
 }
