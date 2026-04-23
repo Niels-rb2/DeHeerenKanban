@@ -120,102 +120,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Label "${GMAIL_LABEL}" not found` }, { status: 404 });
     }
 
-    // Fetch threads with this label — paginate up to ~500 so newly-arrived
-    // threads aren't silently dropped when there are more than 100 labeled threads.
-    const MAX_PAGES = 5;
-    type GmailThreadStub = { id?: string | null; historyId?: string | null };
-    const gmailThreads: GmailThreadStub[] = [];
-    let pageToken: string | undefined = undefined;
-    for (let page = 0; page < MAX_PAGES; page++) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const listRes: any = await gmail.users.threads.list({
-        userId: 'me',
-        labelIds: [targetLabel.id],
-        maxResults: 100,
-        pageToken,
-      });
-      if (listRes.data.threads) gmailThreads.push(...listRes.data.threads);
-      pageToken = listRes.data.nextPageToken || undefined;
-      if (!pageToken) break;
-    }
+    // Fetch threads with this label
+    const threadsRes = await gmail.users.threads.list({
+      userId: 'me',
+      labelIds: [targetLabel.id],
+      maxResults: 100,
+    });
 
+    const gmailThreads = threadsRes.data.threads || [];
     let synced = 0;
-    let alreadyUpToDate = 0;
     const errors: string[] = [];
     const skipped: string[] = [];
-    type Outcome = 'created' | 'updated' | 'unchanged' | 'skipped' | 'error';
-    const threadOutcomes: Array<{ id: string; subject: string; outcome: Outcome; detail?: string }> = [];
 
-    // Batch-query existing rows for all threads (single Supabase query instead of 100)
-    const allThreadIds = gmailThreads.map(t => t.id!).filter(Boolean);
-    const { data: existingRows } = await supabaseAdmin
-      .from('private_event_requests')
-      .select('id, gmail_thread_id, status, event_date')
-      .in('gmail_thread_id', allThreadIds);
-    const existingByThreadId = new Map(
-      (existingRows || []).map(r => [r.gmail_thread_id, r])
-    );
-
-    // Batch-query existing message IDs per thread (single query) so we can
-    // skip the expensive full Gmail fetch when an existing thread has no new messages.
-    const existingThreadPkIds = (existingRows || []).map(r => r.id);
-    const existingMessagesByThread = new Map<string, Set<string>>();
-    if (existingThreadPkIds.length > 0) {
-      const { data: allMsgs } = await supabaseAdmin
-        .from('messages')
-        .select('thread_id, gmail_message_id')
-        .in('thread_id', existingThreadPkIds);
-      for (const m of allMsgs || []) {
-        if (!existingMessagesByThread.has(m.thread_id)) {
-          existingMessagesByThread.set(m.thread_id, new Set());
-        }
-        existingMessagesByThread.get(m.thread_id)!.add(m.gmail_message_id);
-      }
-    }
-
-    const processThread = async (gmailThread: typeof gmailThreads[number]) => {
-      const tid = gmailThread.id!;
+    for (const gmailThread of gmailThreads) {
       try {
-        const existing = existingByThreadId.get(tid) || null;
-
-        // Fast path: for existing threads, first fetch metadata only.
-        // If we already have every message ID, count as unchanged and skip the full fetch.
-        if (existing) {
-          const meta = await gmail.users.threads.get({
-            userId: 'me',
-            id: tid,
-            format: 'metadata',
-            metadataHeaders: ['Subject'],
-          });
-          const metaMessages = meta.data.messages || [];
-          const subject = metaMessages[0]?.payload?.headers?.find(
-            h => h.name?.toLowerCase() === 'subject'
-          )?.value || '';
-          const known = existingMessagesByThread.get(existing.id) || new Set();
-          const hasNew = metaMessages.some(m => m.id && !known.has(m.id));
-          if (!hasNew) {
-            alreadyUpToDate++;
-            threadOutcomes.push({ id: tid, subject, outcome: 'unchanged' });
-            return;
-          }
-        }
+        // Check if already synced
+        const { data: existing } = await supabaseAdmin
+          .from('private_event_requests')
+          .select('id, gmail_thread_id, status, event_date')
+          .eq('gmail_thread_id', gmailThread.id!)
+          .maybeSingle();
 
         // Fetch full thread from Gmail
         const threadDetail = await gmail.users.threads.get({
           userId: 'me',
-          id: tid,
+          id: gmailThread.id!,
           format: 'full',
         });
 
         const messages = threadDetail.data.messages || [];
-        const subjectHeader = messages[0]?.payload?.headers?.find(
-          h => h.name?.toLowerCase() === 'subject'
-        )?.value || '';
-        if (messages.length === 0) {
-          skipped.push(`${tid}: no messages`);
-          threadOutcomes.push({ id: tid, subject: subjectHeader, outcome: 'skipped', detail: 'no messages' });
-          return;
-        }
+        if (messages.length === 0) { skipped.push(`${gmailThread.id}: no messages`); continue; }
 
         // Parse all messages from Gmail
         const parsedMessages = messages.map(msg => {
@@ -231,17 +165,7 @@ export async function POST(req: NextRequest) {
           const { plain, html } = extractEmailBody(msg.payload);
 
           const isOutbound = fromEmail.toLowerCase() === CAFE_EMAIL.toLowerCase();
-
-          // Framer notifications were originally sent from noreply@framer.com, but can
-          // now also arrive from the cafe's own address (when Framer is configured to
-          // send via the customer's domain). Fall back to content-based detection.
-          const bodySample = `${msg.snippet || ''}\n${plain || ''}\n${html || ''}`;
-          const isFramer =
-            fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase() ||
-            /support@framer\.com|This email is a submission from your site/i.test(bodySample) ||
-            (/Voornaam[:\s]/i.test(bodySample) &&
-              /E-?mailadres[:\s]/i.test(bodySample) &&
-              /Beschrijf/i.test(bodySample));
+          const isFramer = fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase();
 
           return {
             gmail_message_id: msg.id!,
@@ -253,16 +177,21 @@ export async function POST(req: NextRequest) {
             body_plain: plain,
             body_html: html,
             // Framer notifications count as INBOUND (they represent customer submissions)
-            direction: (isFramer || !isOutbound ? 'INBOUND' : 'OUTBOUND') as 'INBOUND' | 'OUTBOUND',
+            direction: (isOutbound ? 'OUTBOUND' : 'INBOUND') as 'INBOUND' | 'OUTBOUND',
             _isFramer: isFramer,
           };
         });
 
-        console.log(`[SYNC] Thread ${tid}: ${messages.length} messages, existing=${!!existing}`);
+        console.log(`[SYNC] Thread ${gmailThread.id}: ${messages.length} messages, existing=${!!existing}`);
 
         if (existing) {
           // ── Re-sync: insert only NEW messages for existing thread ──
-          const existingIds = existingMessagesByThread.get(existing.id) || new Set();
+          const { data: existingMessages } = await supabaseAdmin
+            .from('messages')
+            .select('gmail_message_id')
+            .eq('thread_id', existing.id);
+
+          const existingIds = new Set((existingMessages || []).map(m => m.gmail_message_id));
           const newMessages = parsedMessages.filter(m => !existingIds.has(m.gmail_message_id));
 
           if (newMessages.length > 0) {
@@ -290,12 +219,8 @@ export async function POST(req: NextRequest) {
             }
 
             synced++;
-            threadOutcomes.push({ id: tid, subject: subjectHeader, outcome: 'updated', detail: `+${newMessages.length} berichten` });
-          } else {
-            alreadyUpToDate++;
-            threadOutcomes.push({ id: tid, subject: subjectHeader, outcome: 'unchanged' });
           }
-          return;
+          continue;
         }
 
         // ── New thread: full creation flow ──
@@ -314,7 +239,7 @@ export async function POST(req: NextRequest) {
         let senderEmail = '';
         let requestBody = '';
 
-        console.log(`[SYNC] Thread ${tid}: framer=${!!framerMsg}, customerReply=${!!customerReply}, directions=${parsedMessages.map(m => m.direction).join(',')}, from=${parsedMessages.map(m => m.from_email).join(',')}`);
+        console.log(`[SYNC] Thread ${gmailThread.id}: framer=${!!framerMsg}, customerReply=${!!customerReply}, directions=${parsedMessages.map(m => m.direction).join(',')}, from=${parsedMessages.map(m => m.from_email).join(',')}`);
 
         if (framerMsg) {
           // Parse customer details from Framer HTML
@@ -344,17 +269,15 @@ export async function POST(req: NextRequest) {
         } else {
           // No inbound at all — skip
           const dirs = parsedMessages.map(m => `${m.from_email}=${m.direction}`).join(', ');
-          skipped.push(`${tid}: no inbound (${dirs})`);
-          threadOutcomes.push({ id: tid, subject: subjectHeader, outcome: 'skipped', detail: `no inbound (${dirs})` });
-          return;
+          skipped.push(`${gmailThread.id}: no inbound (${dirs})`);
+          continue;
         }
 
-        console.log(`[SYNC] Thread ${tid}: senderName=${senderName}, senderEmail=${senderEmail}, requestBody=${requestBody?.substring(0, 100)}`);
+        console.log(`[SYNC] Thread ${gmailThread.id}: senderName=${senderName}, senderEmail=${senderEmail}, requestBody=${requestBody?.substring(0, 100)}`);
 
         if (!senderEmail) {
-          skipped.push(`${tid}: no email found (framer=${!!framerMsg}, customer=${!!customerReply}, name=${senderName})`);
-          threadOutcomes.push({ id: tid, subject: subjectHeader, outcome: 'skipped', detail: 'no email found' });
-          return;
+          skipped.push(`${gmailThread.id}: no email found (framer=${!!framerMsg}, customer=${!!customerReply}, name=${senderName})`);
+          continue;
         }
 
         // Step 2: AI extraction on the request body
@@ -379,7 +302,7 @@ export async function POST(req: NextRequest) {
 
         // Step 3: Insert the event
         const newRequest = {
-          gmail_thread_id: tid,
+          gmail_thread_id: gmailThread.id!,
           sender_name: extractedData.senderName || senderName,
           sender_email: senderEmail,
           occasion_type: extractedData.occasionType,
@@ -399,9 +322,8 @@ export async function POST(req: NextRequest) {
           .single();
 
         if (insertError) {
-          errors.push(`Thread ${tid}: ${insertError.message}`);
-          threadOutcomes.push({ id: tid, subject: subjectHeader, outcome: 'error', detail: insertError.message });
-          return;
+          errors.push(`Thread ${gmailThread.id}: ${insertError.message}`);
+          continue;
         }
 
         if (created) {
@@ -415,19 +337,10 @@ export async function POST(req: NextRequest) {
             if (msgError) console.error('[SYNC] Message insert error:', msgError.message);
           }
           synced++;
-          threadOutcomes.push({ id: tid, subject: subjectHeader, outcome: 'created', detail: `${senderName} <${senderEmail}>` });
         }
       } catch (threadError: any) {
-        errors.push(`Thread ${tid}: ${threadError.message}`);
-        threadOutcomes.push({ id: tid, subject: '', outcome: 'error', detail: threadError.message });
+        errors.push(`Thread ${gmailThread.id}: ${threadError.message}`);
       }
-    };
-
-    // Process threads in parallel batches (concurrency = 10)
-    const CONCURRENCY = 10;
-    for (let i = 0; i < gmailThreads.length; i += CONCURRENCY) {
-      const batch = gmailThreads.slice(i, i + CONCURRENCY);
-      await Promise.all(batch.map(processThread));
     }
 
     // ── Auto-archive: events with event_date in the past ──
@@ -455,12 +368,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       synced,
-      alreadyUpToDate,
       autoArchived,
       totalThreads: gmailThreads.length,
       errors: errors.slice(0, 5),
       skipped: skipped.slice(0, 10),
-      threadOutcomes: threadOutcomes.slice(0, 50),
     });
   } catch (error: any) {
     console.error('[SYNC] Error:', error.message);

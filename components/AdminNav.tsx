@@ -30,26 +30,9 @@ function AdminNavInner() {
       const res = await fetch('/api/gmail/sync', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        const parts = [`${data.synced} nieuw`];
-        if (typeof data.alreadyUpToDate === 'number') parts.push(`${data.alreadyUpToDate} al bijgewerkt`);
-        if (data.skipped?.length) parts.push(`${data.skipped.length} overgeslagen`);
-        if (data.autoArchived > 0) parts.push(`${data.autoArchived} gearchiveerd`);
-        // If no new threads, try to show a useful hint about recent Framer-like threads
-        let description: string | undefined;
-        if (data.synced === 0 && data.threadOutcomes?.length) {
-          const framerish = data.threadOutcomes.filter((t: { subject?: string }) =>
-            /aanvraag besloten feestje/i.test(t.subject || '')
-          );
-          if (framerish.length) {
-            description = framerish
-              .slice(0, 5)
-              .map((t: { subject?: string; outcome: string; detail?: string }) =>
-                `"${t.subject?.slice(0, 40) || '(geen onderwerp)'}" → ${t.outcome}${t.detail ? ` (${t.detail})` : ''}`
-              )
-              .join('\n');
-          }
-        }
-        toast.success(parts.join(' · '), { description, duration: description ? 15000 : 4000 });
+        const parts = [`${data.synced} gesprekken gesynchroniseerd`];
+        if (data.autoArchived > 0) parts.push(`${data.autoArchived} automatisch gearchiveerd`);
+        toast.success(parts.join(' · '));
         window.dispatchEvent(new Event('gmail-sync-complete'));
         router.refresh();
       } else {
