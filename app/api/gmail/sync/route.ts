@@ -161,18 +161,11 @@ export async function POST(req: NextRequest) {
           const { name: fromName, email: fromEmail } = parseEmailAddress(fromHeader);
           const toHeader = getHeader('to');
           const toEmails = toHeader.split(',').map(e => parseEmailAddress(e.trim()).email);
-          const subjectStr = getHeader('subject');
           const date = new Date(parseInt(msg.internalDate || '0')).toISOString();
           const { plain, html } = extractEmailBody(msg.payload);
 
           const isOutbound = fromEmail.toLowerCase() === CAFE_EMAIL.toLowerCase();
-
-          // Framer notifications originally came from noreply@framer.com. They now
-          // arrive from the cafe's own address (Framer configured to send via our
-          // domain) — so also recognize them by the subject line our form uses.
-          const isFramer =
-            fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase() ||
-            /aanvraag\s+besloten\s+feestje/i.test(subjectStr);
+          const isFramer = fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase();
 
           return {
             gmail_message_id: msg.id!,
@@ -184,7 +177,7 @@ export async function POST(req: NextRequest) {
             body_plain: plain,
             body_html: html,
             // Framer notifications count as INBOUND (they represent customer submissions)
-            direction: (isFramer || !isOutbound ? 'INBOUND' : 'OUTBOUND') as 'INBOUND' | 'OUTBOUND',
+            direction: (isOutbound ? 'OUTBOUND' : 'INBOUND') as 'INBOUND' | 'OUTBOUND',
             _isFramer: isFramer,
           };
         });
