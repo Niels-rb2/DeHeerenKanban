@@ -227,7 +227,6 @@ export async function POST(req: NextRequest) {
           const { name: fromName, email: fromEmail } = parseEmailAddress(fromHeader);
           const toHeader = getHeader('to');
           const toEmails = toHeader.split(',').map(e => parseEmailAddress(e.trim()).email);
-          const subjectStr = getHeader('subject');
           const date = new Date(parseInt(msg.internalDate || '0')).toISOString();
           const { plain, html } = extractEmailBody(msg.payload);
 
@@ -235,13 +234,14 @@ export async function POST(req: NextRequest) {
 
           // Framer notifications were originally sent from noreply@framer.com, but can
           // now also arrive from the cafe's own address (when Framer is configured to
-          // send via the customer's domain). Fall back to subject and content detection.
+          // send via the customer's domain). Fall back to content-based detection.
           const bodySample = `${msg.snippet || ''}\n${plain || ''}\n${html || ''}`;
           const isFramer =
             fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase() ||
-            /aanvraag\s+besloten\s+feestje/i.test(subjectStr) ||
-            /support@framer\.com|submission from your site/i.test(bodySample) ||
-            (/Voornaam/i.test(bodySample) && /Beschrijf/i.test(bodySample));
+            /support@framer\.com|This email is a submission from your site/i.test(bodySample) ||
+            (/Voornaam[:\s]/i.test(bodySample) &&
+              /E-?mailadres[:\s]/i.test(bodySample) &&
+              /Beschrijf/i.test(bodySample));
 
           return {
             gmail_message_id: msg.id!,
@@ -377,17 +377,6 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Determine starting status: if the latest message is older than 30 days,
-        // this is a historical thread that got swept up by the sync — it should not
-        // appear in "Nog te antwoorden" because it's stale. Archive it immediately.
-        const latestMessageMs = Math.max(
-          ...parsedMessages.map(m => new Date(m.date).getTime()).filter(n => !Number.isNaN(n)),
-          0
-        );
-        const STALE_MS = 30 * 24 * 60 * 60 * 1000;
-        const isStale = latestMessageMs > 0 && Date.now() - latestMessageMs > STALE_MS;
-        const initialStatus: ThreadStatus = isStale ? 'ARCHIVE' : 'TO_ANSWER';
-
         // Step 3: Insert the event
         const newRequest = {
           gmail_thread_id: tid,
@@ -400,8 +389,7 @@ export async function POST(req: NextRequest) {
           guest_count: extractedData.guestCount,
           special_notes: extractedData.specialNotes,
           ai_summary: extractedData.aiSummary,
-          status: initialStatus,
-          archived_at: isStale ? new Date().toISOString() : null,
+          status: 'TO_ANSWER' as ThreadStatus,
         };
 
         const { data: created, error: insertError } = await supabaseAdmin
@@ -461,49 +449,6 @@ export async function POST(req: NextRequest) {
       if (!archiveError) {
         autoArchived = ids.length;
         console.log(`[SYNC] Auto-archived ${autoArchived} events with past event_date`);
-      }
-    }
-
-    // ── Auto-archive: active threads whose latest Gmail message is > 30 days old ──
-    // Covers historical threads that got swept up by a wider sync (e.g. mails from
-    // 2021 that only just got processed), or threads where AI never extracted an
-    // event_date so the past-event check couldn't fire.
-    const staleCutoffMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const staleCutoffIso = new Date(staleCutoffMs).toISOString();
-    const { data: activeThreadRows } = await supabaseAdmin
-      .from('private_event_requests')
-      .select('id')
-      .in('status', ['TO_ANSWER', 'ANSWERED', 'CONSULTATION_PLANNED', 'GO']);
-
-    if (activeThreadRows && activeThreadRows.length > 0) {
-      const activeIds = activeThreadRows.map(t => t.id);
-      const { data: latestMsgs } = await supabaseAdmin
-        .from('messages')
-        .select('thread_id, date')
-        .in('thread_id', activeIds)
-        .order('date', { ascending: false });
-
-      const latestByThread = new Map<string, string>();
-      for (const m of latestMsgs || []) {
-        if (!latestByThread.has(m.thread_id)) {
-          latestByThread.set(m.thread_id, m.date);
-        }
-      }
-
-      const staleIds = activeIds.filter(id => {
-        const latest = latestByThread.get(id);
-        return latest && latest < staleCutoffIso;
-      });
-
-      if (staleIds.length > 0) {
-        const { error: staleError } = await supabaseAdmin
-          .from('private_event_requests')
-          .update({ status: 'ARCHIVE', archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-          .in('id', staleIds);
-        if (!staleError) {
-          autoArchived += staleIds.length;
-          console.log(`[SYNC] Auto-archived ${staleIds.length} stale threads (>30d old)`);
-        }
       }
     }
 
