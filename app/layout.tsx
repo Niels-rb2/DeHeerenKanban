@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Geist_Mono } from 'next/font/google';
 import { AdminNav } from '@/components/AdminNav';
-import { AuthProvider } from '@/components/AuthProvider';
 import { ClientToaster } from '@/components/ClientToaster';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SearchProvider } from '@/lib/search-context';
@@ -55,7 +54,6 @@ export default function RootLayout({
   return (
     <html lang="nl" suppressHydrationWarning className={`${bricolage.variable} ${geistMono.variable} light`}>
       <body suppressHydrationWarning className="antialiased min-h-screen">
-        <AuthProvider>
         <ThemeProvider>
           <SearchProvider>
             <a
@@ -77,7 +75,6 @@ export default function RootLayout({
             <ServiceWorkerRegister />
           </SearchProvider>
         </ThemeProvider>
-        </AuthProvider>
       </body>
     </html>
   );

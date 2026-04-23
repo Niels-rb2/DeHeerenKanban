@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
-import { useSession } from 'next-auth/react';
 import { PrivateEventRequest, ThreadStatus } from '@/lib/types';
 import { StatsBar } from '@/components/StatsBar';
 import { KanbanBoard } from '@/components/KanbanBoard';
@@ -67,13 +66,6 @@ function filterEvents(
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 function DashboardContent() {
-  const { data: session } = useSession();
-  const firstName = session?.user?.name?.split(' ')[0] ?? '';
-  const [greeting, setGreeting] = useState('');
-  useEffect(() => {
-    const h = new Date().getHours();
-    setGreeting(h < 12 ? 'Goedemorgen' : h < 18 ? 'Goedemiddag' : 'Goedenavond');
-  }, []);
   const { query } = useSearch();
 
   const [allEvents, setAllEvents] = useState<Record<ThreadStatus, PrivateEventRequest[]> | null>(null);
@@ -199,7 +191,7 @@ function DashboardContent() {
           className="text-2xl md:text-[2.5rem] font-medium leading-none"
           style={{ color: 'var(--clr-text)' }}
         >
-          {greeting}, <span style={{ color: '#A03110' }}>{firstName}</span>
+          {getGreeting()}, <span style={{ color: '#A03110' }}>Suzan</span>
         </h1>
       </div>
 
