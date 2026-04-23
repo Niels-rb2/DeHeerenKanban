@@ -141,21 +141,29 @@ export async function POST(req: NextRequest) {
       if (!pageToken) break;
     }
 
-    // Safety net: also search Gmail directly for recent "Aanvraag Besloten Feestje"
-    // threads from the last 60 days, in case the label isn't applied (filter delay,
-    // manually-removed label, etc.). Merges with the label-based results above.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const subjectRes: any = await gmail.users.threads.list({
-        userId: 'me',
-        q: 'subject:"Aanvraag Besloten Feestje" newer_than:60d',
-        maxResults: 50,
-      });
-      for (const t of (subjectRes.data.threads || []) as GmailThreadStub[]) {
-        if (t.id && !threadMap.has(t.id)) threadMap.set(t.id, t);
+    // Safety net: also run several broad Gmail searches so we never miss a
+    // recent Framer submission, regardless of label state / filter delay /
+    // exact subject wording. Results merge into threadMap (deduped by id).
+    const fallbackQueries = [
+      'subject:"Aanvraag Besloten Feestje" newer_than:60d',
+      'subject:feestje newer_than:30d',
+      '"via de website" newer_than:30d',
+      'from:noreply@framer.com newer_than:30d',
+    ];
+    for (const q of fallbackQueries) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res: any = await gmail.users.threads.list({
+          userId: 'me',
+          q,
+          maxResults: 50,
+        });
+        for (const t of (res.data.threads || []) as GmailThreadStub[]) {
+          if (t.id && !threadMap.has(t.id)) threadMap.set(t.id, t);
+        }
+      } catch (e) {
+        console.warn(`[SYNC] Fallback search failed (${q}):`, e);
       }
-    } catch (e) {
-      console.warn('[SYNC] Subject fallback search failed:', e);
     }
 
     const gmailThreads: GmailThreadStub[] = Array.from(threadMap.values());
