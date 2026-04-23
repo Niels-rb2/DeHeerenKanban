@@ -44,3 +44,56 @@ export function parseEmailAddress(header: string): { name: string; email: string
 
 export const CAFE_EMAIL = 'info@cafedeheeren.nl';
 export const GMAIL_LABEL = 'Besloten feestje';
+export const FRAMER_EMAIL = 'noreply@framer.com';
+
+/**
+ * Parse a Framer form notification email.
+ * Extracts customer name, email, phone, and request text from HTML body.
+ */
+export function parseFramerNotification(html: string): {
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  request: string | null;
+} {
+  const text = html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(p|div|tr|td|th|li|h[1-6])[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#\d+;/g, '')
+    .replace(/[\u200B\u00AD\u034F\u2007\u200C\u200D\uFEFF]/g, '')
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n\s*\n/g, '\n')
+    .trim();
+
+  const emailMatch = text.match(/E-?mailadres[:\s]+([^\s,]+@[^\s,]+)/i);
+  const firstNameMatch = text.match(/Voornaam[:\s]+([A-Za-zÀ-ÿ&\s\-\.]+?)(?=\s*(?:Achternaam|E-?mailadres|Telefoonnummer|Beschrijf|$))/i);
+  const lastNameMatch = text.match(/Achternaam[:\s]+([A-Za-zÀ-ÿ\s\-\.]+?)(?=\s*(?:E-?mailadres|Telefoonnummer|Beschrijf|$))/i);
+  const phoneMatch = text.match(/Telefoonnummer[:\s]+([\d\s\+\-()]{8,})/i);
+  const requestMatch = text.match(/Beschrijf[^:]*:[:\s]+([\s\S]+?)(?=This email is a submission|support@framer\.com|Not expecting this|$)/i);
+
+  return {
+    firstName: firstNameMatch?.[1]?.trim() || null,
+    lastName: lastNameMatch?.[1]?.trim() || null,
+    email: emailMatch?.[1]?.trim() || null,
+    phone: phoneMatch?.[1]?.trim() || null,
+    request: requestMatch?.[1]?.trim() || null,
+  };
+}
+
+/**
+ * Is this Gmail message a Framer website-form submission?
+ * Matches on sender (noreply@framer.com) OR our known subject line.
+ */
+export function isFramerSubmission(fromEmail: string, subject: string): boolean {
+  return (
+    fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase() ||
+    /aanvraag\s+besloten\s+feestje/i.test(subject)
+  );
+}

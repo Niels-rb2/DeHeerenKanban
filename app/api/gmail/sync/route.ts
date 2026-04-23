@@ -233,8 +233,11 @@ export async function POST(req: NextRequest) {
         // ── New thread: full creation flow ──
 
         // Step 1: Find customer info
-        // First check for a Framer notification (website form submission)
-        const framerMsg = parsedMessages.find(m => m._isFramer);
+        // Collect ALL Framer submissions in this Gmail thread (when Gmail has
+        // threaded multiple form submissions together because they share a
+        // subject line + sender, we want a separate card per submission).
+        const framerMessages = parsedMessages.filter(m => m._isFramer);
+        const framerMsg = framerMessages[0];
         // Also find the first real customer reply (not Framer, not Café)
         const customerReply = parsedMessages.find(m =>
           m.direction === 'INBOUND' &&
@@ -344,6 +347,69 @@ export async function POST(req: NextRequest) {
             if (msgError) console.error('[SYNC] Message insert error:', msgError.message);
           }
           synced++;
+
+          // Step 5: if the Gmail thread contained multiple Framer submissions
+          // (e.g. same-email test data), create a secondary card per extra
+          // submission so each one is tracked independently.
+          for (let i = 1; i < framerMessages.length; i++) {
+            const extraMsg = framerMessages[i];
+            const synthTid = `${gmailThread.id}:${extraMsg.gmail_message_id}`;
+            const extraParsed = parseFramerNotification(extraMsg.body_html || '');
+            const extraName = [extraParsed.firstName, extraParsed.lastName].filter(Boolean).join(' ') || '';
+            const extraEmail = extraParsed.email || '';
+            const extraBody = extraParsed.request || extraMsg.snippet || '';
+            if (!extraEmail) continue;
+
+            let extraExtracted = {
+              senderName: extraName,
+              occasionType: null as string | null,
+              eventDate: null as string | null,
+              startTime: null as string | null,
+              endTime: null as string | null,
+              guestCount: null as number | null,
+              specialNotes: null as string | null,
+              aiSummary: null as string | null,
+            };
+            if (extraBody && !skipAI) {
+              try {
+                extraExtracted = await extractEventDataFromEmail(extraBody);
+              } catch {}
+            }
+
+            const { data: extraRow } = await supabaseAdmin
+              .from('private_event_requests')
+              .insert({
+                gmail_thread_id: synthTid,
+                sender_name: extraExtracted.senderName || extraName,
+                sender_email: extraEmail,
+                occasion_type: extraExtracted.occasionType,
+                event_date: extraExtracted.eventDate,
+                start_time: extraExtracted.startTime,
+                end_time: extraExtracted.endTime,
+                guest_count: extraExtracted.guestCount,
+                special_notes: extraExtracted.specialNotes,
+                ai_summary: extraExtracted.aiSummary,
+                status: 'TO_ANSWER' as ThreadStatus,
+              })
+              .select()
+              .single();
+
+            if (extraRow) {
+              await supabaseAdmin.from('messages').insert({
+                thread_id: extraRow.id,
+                gmail_message_id: `${extraMsg.gmail_message_id}:${synthTid}`,
+                from_name: extraName || 'Klant (via website)',
+                from_email: extraEmail,
+                to_emails: extraMsg.to_emails,
+                date: extraMsg.date,
+                snippet: extraMsg.snippet,
+                body_plain: extraMsg.body_plain,
+                body_html: extraMsg.body_html,
+                direction: 'INBOUND',
+              });
+              synced++;
+            }
+          }
         }
       } catch (threadError: any) {
         errors.push(`Thread ${gmailThread.id}: ${threadError.message}`);
