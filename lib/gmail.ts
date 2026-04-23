@@ -88,12 +88,27 @@ export function parseFramerNotification(html: string): {
 }
 
 /**
- * Is this Gmail message a Framer website-form submission?
- * Matches on sender (noreply@framer.com) OR our known subject line.
+ * Is this Gmail message an *original* Framer website-form submission?
+ *
+ * We deliberately DON'T match on subject alone — replies in a Framer thread
+ * carry "Re: Aanvraag Besloten Feestje" and would be falsely flagged. Instead:
+ *  - sender is noreply@framer.com (classic case), OR
+ *  - subject matches our form AND the body contains the Framer footer
+ *    ("support@framer.com" / "submission of a Framer form"), which replies
+ *    do not have.
  */
-export function isFramerSubmission(fromEmail: string, subject: string): boolean {
-  return (
-    fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase() ||
-    /aanvraag\s+besloten\s+feestje/i.test(subject)
-  );
+export function isFramerSubmission(
+  fromEmail: string,
+  subject: string,
+  body?: string
+): boolean {
+  if (fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase()) return true;
+  const subjectMatches = /aanvraag\s+besloten\s+feestje/i.test(subject);
+  if (!subjectMatches) return false;
+  const bodyHasFramerFooter =
+    !!body &&
+    (/support@framer\.com/i.test(body) ||
+      /submission of a Framer form/i.test(body) ||
+      /This email is a submission/i.test(body));
+  return bodyHasFramerFooter;
 }

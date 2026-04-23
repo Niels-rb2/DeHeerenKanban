@@ -53,7 +53,9 @@ export async function POST() {
         const from = hdr.find(h => h.name?.toLowerCase() === 'from')?.value || '';
         const subject = hdr.find(h => h.name?.toLowerCase() === 'subject')?.value || '';
         const fromEmail = parseEmailAddress(from).email;
-        return isFramerSubmission(fromEmail, subject);
+        const { plain, html } = extractEmailBody(msg.payload);
+        const body = `${msg.snippet || ''}\n${plain || ''}\n${html || ''}`;
+        return isFramerSubmission(fromEmail, subject, body);
       });
 
       if (framerMessages.length <= 1) continue;

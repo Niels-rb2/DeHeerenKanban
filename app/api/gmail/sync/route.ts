@@ -168,11 +168,17 @@ export async function POST(req: NextRequest) {
           const isOutbound = fromEmail.toLowerCase() === CAFE_EMAIL.toLowerCase();
 
           // Framer notifications originally came from noreply@framer.com. They now
-          // arrive from the cafe's own address (Framer configured to send via our
-          // domain) — so also recognize them by the subject line our form uses.
+          // also arrive from the cafe's own address (Framer configured to send via
+          // our domain). Match on sender, OR subject + Framer footer in body
+          // (which replies in the same thread do NOT have, so we avoid flagging
+          // Re:-replies as new submissions).
+          const bodyText = `${msg.snippet || ''}\n${plain || ''}\n${html || ''}`;
           const isFramer =
             fromEmail.toLowerCase() === FRAMER_EMAIL.toLowerCase() ||
-            /aanvraag\s+besloten\s+feestje/i.test(subjectStr);
+            (/aanvraag\s+besloten\s+feestje/i.test(subjectStr) &&
+              (/support@framer\.com/i.test(bodyText) ||
+                /submission of a Framer form/i.test(bodyText) ||
+                /This email is a submission/i.test(bodyText)));
 
           return {
             gmail_message_id: msg.id!,
