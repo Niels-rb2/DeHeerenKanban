@@ -255,9 +255,19 @@ senderEmail: echte klant-email, NIET noreply@framer.com, notifications@forms.elf
 
 // ─── Legacy single-message extraction (kept for backward compat) ─────────────
 
-export async function extractEventDataFromEmail(emailBody: string): Promise<ExtractedEventData> {
+export async function extractEventDataFromEmail(
+  emailBody: string,
+  receivedDate: string = new Date().toISOString().split('T')[0],
+): Promise<ExtractedEventData> {
   const systemPrompt = `Je bent een AI-assistent die e-mails analyseert voor een restaurant-reserveringssysteem.
 Extraheer informatie uit de gegeven e-mail en retourneer ALLEEN een JSON-object (geen extra tekst).
+
+BELANGRIJK OVER DE EVENT-DATUM:
+- Deze e-mail is ontvangen op ${receivedDate}.
+- Als er alleen een dag + maand wordt genoemd (bv. "10 juli", "zaterdag 15 maart"), is dat
+  altijd de EERSTVOLGENDE voorkomen van die datum ná de ontvangstdatum.
+- Dus als de e-mail van 24 april 2026 is en er staat "10 juli", dan is de datum 2026-07-10.
+- Gok NOOIT een jaar uit je training — leid het jaar af van de ontvangstdatum.
 
 JSON-format:
 {

@@ -294,7 +294,12 @@ export async function POST(req: NextRequest) {
 
         if (requestBody && !skipAI) {
           try {
-            extractedData = await extractEventDataFromEmail(requestBody);
+            // Pass the date the Framer submission was received so Claude can
+            // infer the correct year from phrases like "10 juli".
+            const receivedDate = (framerMsg || customerReply)?.date
+              ? (framerMsg || customerReply)!.date.split('T')[0]
+              : new Date().toISOString().split('T')[0];
+            extractedData = await extractEventDataFromEmail(requestBody, receivedDate);
           } catch (error) {
             console.warn('[SYNC] AI extraction failed:', error);
           }
