@@ -78,9 +78,29 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Auto-archive on fetch is disabled — cards with a past event_date were
-    // bouncing back to ARCHIVE immediately after being dragged to GO. Users
-    // can manually archive via the card menu instead.
+    // Auto-archive events whose event_date is more than 2 days past. The grace
+    // window lets a user drag today's or yesterday's card to GO without it
+    // bouncing straight back to ARCHIVE on the next refresh.
+    const cutoff = new Date();
+    cutoff.setUTCDate(cutoff.getUTCDate() - 2);
+    const cutoffDate = cutoff.toISOString().split('T')[0];
+    const { data: stale } = await supabaseAdmin
+      .from('private_event_requests')
+      .select('id')
+      .lt('event_date', cutoffDate)
+      .in('status', ['TO_ANSWER', 'ANSWERED', 'CONSULTATION_PLANNED', 'GO']);
+
+    if (stale && stale.length > 0) {
+      const ids = stale.map(e => e.id);
+      await supabaseAdmin
+        .from('private_event_requests')
+        .update({
+          status: 'ARCHIVE',
+          archived_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .in('id', ids);
+    }
 
     const { data, error } = await supabaseAdmin
       .from('private_event_requests')
