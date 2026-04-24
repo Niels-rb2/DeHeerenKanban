@@ -286,6 +286,58 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+/**
+ * Build a list of HH:MM strings in 15-minute steps across the cafe's typical
+ * evening window (16:00 through 04:00 the next morning).
+ */
+function buildTimeSlots(): string[] {
+  const slots: string[] = [];
+  const push = (h: number, m: number) => slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  for (let h = 16; h <= 23; h++) for (const m of [0, 15, 30, 45]) push(h, m);
+  for (let h = 0; h <= 4; h++) for (const m of [0, 15, 30, 45]) push(h, m);
+  return slots;
+}
+const TIME_SLOTS = buildTimeSlots();
+
+/**
+ * Dropdown with 15-minute increments. If `value` is empty the field visually
+ * shows "--:--" but when opened the list scrolls to `highlight` (default 20:00
+ * for begintijd) as a hint.
+ */
+function TimeSelect({
+  value,
+  onChange,
+  highlight = '20:00',
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  highlight?: string;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 pr-9 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
+        style={{
+          background: 'var(--clr-input)',
+          borderColor: 'var(--clr-input-border)',
+          color: 'var(--clr-text)',
+        }}
+      >
+        <option value="">--:--</option>
+        {TIME_SLOTS.map(t => (
+          <option key={t} value={t} data-highlight={t === highlight ? 'true' : undefined}>
+            {t}
+          </option>
+        ))}
+      </select>
+      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+        style={{ color: 'var(--clr-text-muted)' }} />
+    </div>
+  );
+}
+
 interface EventDetailPanelProps {
   event: PrivateEventRequest & { messages?: Message[] };
 }
@@ -657,38 +709,10 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             {/* Begintijd - Eindtijd */}
             <div className="grid grid-cols-2 gap-2">
               <Field label="Begintijd">
-                <div className="relative">
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3 py-2 pr-9 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
-                    style={{
-                      background: 'var(--clr-input)',
-                      borderColor: 'var(--clr-input-border)',
-                      color: 'var(--clr-text)',
-                    }}
-                  />
-                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ color: 'var(--clr-text-muted)' }} />
-                </div>
+                <TimeSelect value={startTime} onChange={setStartTime} highlight="20:00" />
               </Field>
               <Field label="Eindtijd">
-                <div className="relative">
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-3 py-2 pr-9 rounded-lg text-sm border appearance-none focus:outline-none focus:ring-2"
-                    style={{
-                      background: 'var(--clr-input)',
-                      borderColor: 'var(--clr-input-border)',
-                      color: 'var(--clr-text)',
-                    }}
-                  />
-                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ color: 'var(--clr-text-muted)' }} />
-                </div>
+                <TimeSelect value={endTime} onChange={setEndTime} highlight="00:00" />
               </Field>
             </div>
 
