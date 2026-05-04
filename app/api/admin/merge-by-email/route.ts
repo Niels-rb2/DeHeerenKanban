@@ -3,15 +3,12 @@ import { auth } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 /**
- * Merge multiple event cards that share the same sender_email into one.
+ * Merge two specific event cards into one.
  *
- * Strategy:
- *  - Pick the OLDEST card (smallest created_at) as the "keeper" — this is
- *    the one the user has typically been editing manually.
- *  - Re-point every message from the other matching cards to the keeper.
- *  - Delete the now-empty duplicate event rows.
+ * Body: { keepId: string, removeId: string, confirm?: boolean }
+ *  - keepId: the card that stays (its manual edits and status are preserved)
+ *  - removeId: the card whose messages move to keepId, then it gets deleted
  *
- * Body: { email: string, confirm?: boolean }
  * Default is dry-run unless confirm: true is passed.
  */
 export async function POST(req: NextRequest) {
@@ -21,62 +18,56 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const email: string | undefined = body.email;
+  const keepId: string | undefined = body.keepId;
+  const removeId: string | undefined = body.removeId;
   const confirm: boolean = body.confirm === true;
 
-  if (!email || typeof email !== 'string') {
-    return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+  if (!keepId || !removeId) {
+    return NextResponse.json({ error: 'Missing keepId or removeId' }, { status: 400 });
+  }
+  if (keepId === removeId) {
+    return NextResponse.json({ error: 'keepId and removeId must differ' }, { status: 400 });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-
-  // Find all event rows for this email (case-insensitive)
-  const { data: matches, error: findError } = await supabaseAdmin
+  const { data: rows, error: findError } = await supabaseAdmin
     .from('private_event_requests')
     .select('id, sender_name, sender_email, event_date, status, created_at, gmail_thread_id')
-    .ilike('sender_email', normalizedEmail)
-    .order('created_at', { ascending: true });
+    .in('id', [keepId, removeId]);
 
   if (findError) {
     return NextResponse.json({ error: findError.message }, { status: 500 });
   }
 
-  if (!matches || matches.length < 2) {
+  const keep = rows?.find(r => r.id === keepId);
+  const remove = rows?.find(r => r.id === removeId);
+
+  if (!keep || !remove) {
     return NextResponse.json({
-      dryRun: !confirm,
-      matchCount: matches?.length || 0,
-      note: 'Need at least 2 cards with the same email to merge.',
-      matches: matches || [],
-    });
+      error: 'One or both cards not found',
+      foundIds: (rows || []).map(r => r.id),
+    }, { status: 404 });
   }
 
-  const keeper = matches[0];
-  const duplicates = matches.slice(1);
-  const duplicateIds = duplicates.map(d => d.id);
-
-  // Count messages that would move
   const { data: messagesToMove } = await supabaseAdmin
     .from('messages')
-    .select('id, thread_id, gmail_message_id, from_email, date, snippet')
-    .in('thread_id', duplicateIds);
+    .select('id, gmail_message_id, from_email, date, snippet')
+    .eq('thread_id', removeId);
 
   const plan = {
     keep: {
-      id: keeper.id,
-      sender_name: keeper.sender_name,
-      sender_email: keeper.sender_email,
-      event_date: keeper.event_date,
-      status: keeper.status,
-      created_at: keeper.created_at,
+      id: keep.id,
+      sender_name: keep.sender_name,
+      sender_email: keep.sender_email,
+      event_date: keep.event_date,
+      status: keep.status,
     },
-    remove: duplicates.map(d => ({
-      id: d.id,
-      sender_name: d.sender_name,
-      sender_email: d.sender_email,
-      event_date: d.event_date,
-      status: d.status,
-      created_at: d.created_at,
-    })),
+    remove: {
+      id: remove.id,
+      sender_name: remove.sender_name,
+      sender_email: remove.sender_email,
+      event_date: remove.event_date,
+      status: remove.status,
+    },
     messagesToMove: messagesToMove?.length || 0,
     messagesPreview: (messagesToMove || []).slice(0, 10).map(m => ({
       from_email: m.from_email,
@@ -86,18 +77,18 @@ export async function POST(req: NextRequest) {
   };
 
   if (!confirm) {
-    return NextResponse.json({ dryRun: true, plan, note: 'Pass confirm: true in body to apply.' });
+    return NextResponse.json({ dryRun: true, plan, note: 'Pass confirm: true to apply.' });
   }
 
-  // Apply: re-point messages, then delete duplicates
+  // Move messages, then delete the remove card.
   const { error: msgError } = await supabaseAdmin
     .from('messages')
-    .update({ thread_id: keeper.id })
-    .in('thread_id', duplicateIds);
+    .update({ thread_id: keepId })
+    .eq('thread_id', removeId);
 
   if (msgError) {
     return NextResponse.json({
-      error: 'Failed to re-point messages',
+      error: 'Failed to move messages',
       details: msgError.message,
     }, { status: 500 });
   }
@@ -105,19 +96,19 @@ export async function POST(req: NextRequest) {
   const { error: deleteError } = await supabaseAdmin
     .from('private_event_requests')
     .delete()
-    .in('id', duplicateIds);
+    .eq('id', removeId);
 
   if (deleteError) {
     return NextResponse.json({
-      error: 'Failed to delete duplicates (messages already moved)',
+      error: 'Failed to delete duplicate (messages already moved)',
       details: deleteError.message,
     }, { status: 500 });
   }
 
   return NextResponse.json({
     success: true,
-    keptId: keeper.id,
-    removedIds: duplicateIds,
+    keptId: keepId,
+    removedId: removeId,
     messagesMoved: plan.messagesToMove,
   });
 }
