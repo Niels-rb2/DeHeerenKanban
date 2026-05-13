@@ -149,6 +149,17 @@ export async function GET(request: Request) {
       }
     });
 
+    // For closed columns ("Gaat niet door" / "Archief") show the most recently
+    // moved cards at the top — users want to see what they just archived,
+    // not the oldest items.
+    const closedSort = (a: any, b: any) => {
+      const aKey = a.archived_at || a.updated_at || a.created_at || '';
+      const bKey = b.archived_at || b.updated_at || b.created_at || '';
+      return aKey < bKey ? 1 : aKey > bKey ? -1 : 0;
+    };
+    grouped.ARCHIVE.sort(closedSort);
+    grouped.NO_GO.sort(closedSort);
+
     return Response.json({ data: grouped });
   } catch (error) {
     console.error('Error fetching private events:', error);
