@@ -8,7 +8,7 @@ import { PrivateEventRequest, ThreadStatus, Message } from '@/lib/types';
 import { formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
 import {
   Calendar, Users, Sparkles, ChevronDown, ChevronLeft,
-  Info, StickyNote, CheckCircle2, Circle, Clock, PartyPopper,
+  Info, StickyNote, CheckCircle2, Circle, Clock, PartyPopper, Merge, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -359,6 +359,75 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
   const [savingDetails, setSavingDetails] = useState(false);
   const [newestFirst, setNewestFirst] = useState(false);
 
+  // Merge dialog state
+  type MergeCandidate = {
+    id: string;
+    sender_name: string;
+    sender_email: string;
+    event_date: string | null;
+    status: ThreadStatus;
+    created_at: string;
+    sameEmail: boolean;
+  };
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeLoading, setMergeLoading] = useState(false);
+  const [mergeCandidates, setMergeCandidates] = useState<MergeCandidate[]>([]);
+  const [mergeSelectedId, setMergeSelectedId] = useState<string | null>(null);
+  const [mergeSubmitting, setMergeSubmitting] = useState(false);
+  const [mergeSearch, setMergeSearch] = useState('');
+
+  async function openMergeDialog() {
+    setMergeOpen(true);
+    setMergeSelectedId(null);
+    setMergeLoading(true);
+    try {
+      const res = await fetch(`/api/private-events/${event.id}/merge-candidates`);
+      if (!res.ok) throw new Error('Failed to load candidates');
+      const data = await res.json();
+      setMergeCandidates(data.candidates || []);
+    } catch {
+      toast.error('Kon kandidaten niet laden');
+      setMergeOpen(false);
+    } finally {
+      setMergeLoading(false);
+    }
+  }
+
+  async function confirmMerge() {
+    if (!mergeSelectedId) return;
+    setMergeSubmitting(true);
+    try {
+      const res = await fetch(`/api/private-events/${event.id}/merge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeId: mergeSelectedId, confirm: true }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.details || body.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      toast.success(`Samengevoegd. ${data.messagesMoved} bericht(en) verplaatst.`);
+      setMergeOpen(false);
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(`Samenvoegen mislukt: ${err?.message || 'onbekende fout'}`);
+    } finally {
+      setMergeSubmitting(false);
+    }
+  }
+
+  const mergeFiltered = mergeSearch.trim()
+    ? mergeCandidates.filter(c => {
+        const q = mergeSearch.toLowerCase();
+        return (
+          c.sender_name?.toLowerCase().includes(q) ||
+          c.sender_email?.toLowerCase().includes(q)
+        );
+      })
+    : mergeCandidates;
+  const selectedCandidate = mergeCandidates.find(c => c.id === mergeSelectedId) || null;
+
   async function handleReanalyze() {
     setReanalyzing(true);
     try {
@@ -597,14 +666,28 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
             </p>
           )}
 
-          <button
-            onClick={handleReanalyze}
-            disabled={reanalyzing}
-            className="btn-gold text-sm inline-flex items-center gap-1.5 py-3 px-6 rounded-full font-semibold self-start mt-4"
-          >
-            <Sparkles size={12} />
-            {reanalyzing ? 'Bezig…' : 'AI analyse'}
-          </button>
+          <div className="flex flex-wrap gap-2 mt-4 self-start">
+            <button
+              onClick={handleReanalyze}
+              disabled={reanalyzing}
+              className="btn-gold text-sm inline-flex items-center gap-1.5 py-3 px-6 rounded-full font-semibold"
+            >
+              <Sparkles size={12} />
+              {reanalyzing ? 'Bezig…' : 'AI analyse'}
+            </button>
+            <button
+              onClick={openMergeDialog}
+              className="text-sm inline-flex items-center gap-1.5 py-3 px-6 rounded-full font-semibold border"
+              style={{
+                background: 'var(--clr-surface-low)',
+                borderColor: 'var(--clr-outline)',
+                color: 'var(--clr-text)',
+              }}
+            >
+              <Merge size={12} />
+              Samenvoegen met…
+            </button>
+          </div>
         </div>
 
         {/* Special notes */}
@@ -910,6 +993,134 @@ export function EventDetailPanel({ event }: EventDetailPanelProps) {
           )}
         </div>
       </div>
+
+      {/* ── Merge dialog ──────────────────────────────────── */}
+      {mergeOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => !mergeSubmitting && setMergeOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col"
+            style={{
+              background: 'var(--clr-bg)',
+              border: '1px solid var(--clr-outline)',
+              maxHeight: '85vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="flex items-center justify-between px-5 py-4 border-b"
+              style={{ borderColor: 'var(--clr-outline)' }}
+            >
+              <h3 className="text-base font-semibold" style={{ color: 'var(--clr-text)' }}>
+                Samenvoegen met een andere kaart
+              </h3>
+              <button
+                onClick={() => !mergeSubmitting && setMergeOpen(false)}
+                className="p-1 rounded-full"
+                style={{ color: 'var(--clr-text-muted)' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--clr-outline)' }}>
+              <p className="text-xs mb-2" style={{ color: 'var(--clr-text-muted)' }}>
+                De gekozen kaart wordt verwijderd. Berichten verhuizen naar de huidige kaart
+                ({event.sender_name}). Statusinstellingen en handmatige bewerkingen op deze
+                kaart blijven behouden.
+              </p>
+              <input
+                type="text"
+                value={mergeSearch}
+                onChange={(e) => setMergeSearch(e.target.value)}
+                placeholder="Zoek op naam of e-mail…"
+                className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--clr-input)',
+                  borderColor: 'var(--clr-input-border)',
+                  color: 'var(--clr-text)',
+                }}
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">
+              {mergeLoading ? (
+                <p className="text-sm" style={{ color: 'var(--clr-text-muted)' }}>Laden…</p>
+              ) : mergeFiltered.length === 0 ? (
+                <p className="text-sm" style={{ color: 'var(--clr-text-muted)' }}>
+                  Geen kaarten gevonden.
+                </p>
+              ) : (
+                mergeFiltered.map((c) => {
+                  const selected = c.id === mergeSelectedId;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setMergeSelectedId(c.id)}
+                      className="w-full text-left rounded-lg border px-3 py-2.5 transition-colors"
+                      style={{
+                        background: selected ? 'var(--clr-accent-soft, var(--clr-surface-low))' : 'var(--clr-surface-low)',
+                        borderColor: selected ? 'var(--clr-accent, var(--clr-outline))' : 'var(--clr-outline)',
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold truncate" style={{ color: 'var(--clr-text)' }}>
+                          {c.sender_name || '(naamloos)'}
+                        </span>
+                        {c.sameEmail && (
+                          <span className="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded"
+                            style={{ background: 'var(--clr-surface-variant, var(--clr-outline))', color: 'var(--clr-text-muted)' }}>
+                            zelfde e-mail
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs truncate" style={{ color: 'var(--clr-text-muted)' }}>
+                        {c.sender_email}
+                      </div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--clr-text-subtle)' }}>
+                        {c.event_date ? `Datum: ${c.event_date}` : 'Geen datum'} · {STATUS_LABELS[c.status]}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div
+              className="flex items-center justify-end gap-2 px-5 py-3 border-t"
+              style={{ borderColor: 'var(--clr-outline)' }}
+            >
+              <button
+                onClick={() => setMergeOpen(false)}
+                disabled={mergeSubmitting}
+                className="text-sm py-2 px-4 rounded-full border"
+                style={{
+                  background: 'transparent',
+                  borderColor: 'var(--clr-outline)',
+                  color: 'var(--clr-text)',
+                }}
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={confirmMerge}
+                disabled={!selectedCandidate || mergeSubmitting}
+                className="btn-gold text-sm py-2 px-4 rounded-full font-semibold disabled:opacity-50"
+              >
+                {mergeSubmitting
+                  ? 'Bezig…'
+                  : selectedCandidate
+                  ? `Samenvoegen met ${selectedCandidate.sender_name || '…'}`
+                  : 'Kies een kaart'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
