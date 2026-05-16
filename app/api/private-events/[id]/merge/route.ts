@@ -74,11 +74,11 @@ export async function POST(
     return NextResponse.json({ dryRun: true, plan });
   }
 
+  // 1. Move messages
   const { error: msgError } = await supabaseAdmin
     .from('messages')
     .update({ thread_id: keepId })
     .eq('thread_id', removeId);
-
   if (msgError) {
     return NextResponse.json({
       error: 'Failed to move messages',
@@ -86,6 +86,37 @@ export async function POST(
     }, { status: 500 });
   }
 
+  // 2. Re-point any existing merged_threads rows that targeted remove
+  await supabaseAdmin
+    .from('merged_threads')
+    .update({ keeper_id: keepId })
+    .eq('keeper_id', removeId);
+
+  // 3. Look up the remove row's gmail_thread_id and record the mapping so
+  // the next Gmail sync recognises this thread as already-merged.
+  const { data: removeRow } = await supabaseAdmin
+    .from('private_event_requests')
+    .select('gmail_thread_id')
+    .eq('id', removeId)
+    .maybeSingle();
+
+  if (removeRow?.gmail_thread_id) {
+    const { error: mappingError } = await supabaseAdmin
+      .from('merged_threads')
+      .upsert(
+        { gmail_thread_id: removeRow.gmail_thread_id, keeper_id: keepId },
+        { onConflict: 'gmail_thread_id' }
+      );
+    if (mappingError) {
+      return NextResponse.json({
+        error: 'Failed to record merge mapping',
+        details: mappingError.message,
+        hint: 'Did you run the merged_threads table SQL?',
+      }, { status: 500 });
+    }
+  }
+
+  // 4. Delete the duplicate row
   const { error: deleteError } = await supabaseAdmin
     .from('private_event_requests')
     .delete()
@@ -93,7 +124,7 @@ export async function POST(
 
   if (deleteError) {
     return NextResponse.json({
-      error: 'Failed to delete duplicate (messages already moved)',
+      error: 'Failed to delete duplicate (messages already moved, mapping stored)',
       details: deleteError.message,
     }, { status: 500 });
   }
@@ -103,5 +134,6 @@ export async function POST(
     keptId: keepId,
     removedId: removeId,
     messagesMoved: plan.messagesToMove,
+    mappingStored: removeRow?.gmail_thread_id || null,
   });
 }
