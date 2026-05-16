@@ -134,12 +134,30 @@ export async function POST(req: NextRequest) {
 
     for (const gmailThread of gmailThreads) {
       try {
-        // Check if already synced
-        const { data: existing } = await supabaseAdmin
+        // Check if already synced. First look for a direct row, then fall back
+        // to merged_threads — if this Gmail thread was previously merged into
+        // another card, use that keeper instead of creating a new card.
+        let { data: existing } = await supabaseAdmin
           .from('private_event_requests')
           .select('id, gmail_thread_id, status, event_date')
           .eq('gmail_thread_id', gmailThread.id!)
           .maybeSingle();
+
+        if (!existing) {
+          const { data: mapping } = await supabaseAdmin
+            .from('merged_threads')
+            .select('keeper_id')
+            .eq('gmail_thread_id', gmailThread.id!)
+            .maybeSingle();
+          if (mapping?.keeper_id) {
+            const { data: keeper } = await supabaseAdmin
+              .from('private_event_requests')
+              .select('id, gmail_thread_id, status, event_date')
+              .eq('id', mapping.keeper_id)
+              .maybeSingle();
+            if (keeper) existing = keeper;
+          }
+        }
 
         // Fetch full thread from Gmail
         const threadDetail = await gmail.users.threads.get({
