@@ -233,7 +233,7 @@ StatusHint:
 senderEmail: echte klant-email, NIET noreply@framer.com, notifications@forms.elfsightmail.com, info@cafedeheeren.nl`;
 
   const response = await getClient().messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 2048,
     system: systemPrompt,
     messages: [{ role: 'user', content: `Analyseer dit e-mailgesprek${hasCurrentContext ? ' gecombineerd met de handmatige gegevens' : ''}:\n\n${conversation}${contextBlock}\n\nRetourneer ALLEEN het JSON-object.` }],
@@ -288,7 +288,7 @@ ${emailBody}
 Retourneer ALLEEN het JSON-object, geen extra tekst.`;
 
   const response = await getClient().messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
